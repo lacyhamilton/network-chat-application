@@ -1,22 +1,37 @@
-#include "../properties.h"
+#include "../message.h"
+#include "receiver_handler.h"
+#include "sender_handler.h"
+#include "main.h"
 
-int main(int argc, const char * argv[]) 
+int main() 
 {
 
-    char* properties_file = "properties.txt";
-    Properties* properties;
-    char* key = "CHAT_PORT";
-    char* chat_port;
-    
-    properties = property_read_properties(properties_file);
-    chat_port = property_get_property(properties, key);
-    key = "SERVER_PORT";
-    char *server_port = property_get_property(properties, key);
-    key = "SERVER_IP";
-    char *server_ip= property_get_property(properties, key);
-    key = "CHAT_IP";
-    char *chat_ip= property_get_property(properties, key);
-    
+  bool join = false;
+  char command[MESSAGE_LEN];
+  char ip[24];
+  printf("Type JOIN [server IP] to connect\n");
 
-    return EXIT_SUCCESS;
+  while(!join)
+  {
+    scanf("%s %s", command, ip);
+    if(strncmp(command, "JOIN", 4) == 0)
+    {
+      join = true;
+    }
+  }
+
+  SenderArgs senderArgs;
+  senderArgs.ip = ip;
+  //  start listener and chat threads
+  pthread_t listener;
+  pthread_t sender;
+  puts("MAIN 28)");
+
+  pthread_create(&listener, NULL, reciever_handler, NULL);
+  pthread_create(&sender, NULL, sender_handler, (void*)&senderArgs);
+
+  pthread_join(listener, NULL);
+  pthread_join(sender, NULL);
+
+  return EXIT_SUCCESS;
 }
