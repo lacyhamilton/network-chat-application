@@ -5,7 +5,7 @@ TARGET_EXEC := chat_client
 BUILD_DIR := ./build
 SRC_DIRS  := ./src
 
-SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
+SRCS := $(shell find $(SRC_DIRS) -path  "$(SRC_DIRS)/server" -prune -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 

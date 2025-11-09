@@ -6,11 +6,11 @@
 int main()
 {
 
-    /* ******************************************************************** */
-    /* these files contain detailed code that is fully functional           */
-    /* it won't need any more work. Specifically, main.c reads properties   */
-    /* and then implements the server loop                                  */
-    /* ******************************************************************** */
+   // ******************************************************************** 
+   // these files contain detailed code that is fully functional           
+   // it won't need any more work. Specifically, main.c reads properties   
+   // and then implements the server loop                                  
+   // ******************************************************************** 
 
     // socket information for listening
     int server_socket;
