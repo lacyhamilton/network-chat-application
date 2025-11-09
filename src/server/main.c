@@ -1,6 +1,6 @@
 // header files
 #include "main.h"
-#include "properties.h"
+#include "../properties.h"
 
 // main program
 int main()
