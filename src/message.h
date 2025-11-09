@@ -1,4 +1,5 @@
 // preprocessor directives
+#include "chat_node.h"
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
@@ -16,11 +17,12 @@ typedef enum
 
 typedef struct Message
 {
-    MessageType type;
-    // messages are identified by logical name, matched with port/ip by server
-    char logical_name[LOGICAL_NAME_LEN];
+    MessageType type; // enum ^
+    // sender's chat node
+    ChatNode chat_node;
     // message contents, does not always contain data
     char message_data[MESSAGE_LEN];
+
 } Message;
 
 // function prototypes
