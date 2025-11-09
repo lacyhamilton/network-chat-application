@@ -19,8 +19,8 @@ int main()
 
     Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
     // ############### MAKE SURE MATCHES WITH PROPERTIES FILE FIELDS ################
-    char *server_ip = property_get_property(property_list, "IP");
-    char *server_port = property_get_property(property_list, "Port");
+    char *server_ip = property_get_property(property_list, "SERVER_IP");
+    char *server_port = property_get_property(property_list, "SERVER_PORT");
 
     // ignore SIGPIE on client disconnect
     signal(SIGPIPE, SIG_IGN);
