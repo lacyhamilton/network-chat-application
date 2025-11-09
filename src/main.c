@@ -11,6 +11,7 @@ int main()
     /* and then implements the server loop                                  
     /* ******************************************************************** */
 
+    int server_socket;
 
     return 0;
 }
