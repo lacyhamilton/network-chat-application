@@ -8,8 +8,8 @@
 typedef struct ChatNode
 {
     char logical_name[LOGICAL_NAME_LEN];
-    char *ip;
-    int port;
+    char *ip; // ip address can be retrieved from config where the user specifies it manually
+    int port; // port number from config
     struct ChatNode *next;
 } ChatNode;
 
