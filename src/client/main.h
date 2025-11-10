@@ -15,4 +15,5 @@ typedef struct
   char *clientIP;
   char *clientPort;
   char *logicalName;
+  ChatState *state;
 } SenderArgs;

@@ -24,6 +24,8 @@ int main()
   char *clientPort= property_get_property(properties, "CLIENT_PORT");
   char *clientIP= property_get_property(properties, "CLIENT_IP");
   char *serverPort = property_get_property(properties, "SERVER_PORT");
+  
+  ChatState *state = malloc(sizeof(*state));
 
 
   SenderArgs *senderArgs = malloc(sizeof(*senderArgs));
@@ -32,6 +34,8 @@ int main()
   senderArgs->clientPort = clientPort;
   senderArgs->clientIP = clientIP;
   senderArgs->logicalName = logicalName;
+  senderArgs->state = state;
+
   //  start listener and chat threads
   pthread_t listener;
   pthread_t sender;
@@ -41,6 +45,8 @@ int main()
 
   pthread_join(listener, NULL);
   pthread_join(sender, NULL);
+
+  free(senderArgs);
 
   return EXIT_SUCCESS;
 }
