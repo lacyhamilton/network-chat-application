@@ -1,11 +1,10 @@
 // preprocessor directives
-#include "chat_node.h"
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
+#include "chat_node.h"
 #define LOGICAL_NAME_LEN 32
 #define MESSAGE_LEN 64
-
 typedef enum
 {
     JOIN,
