@@ -3,7 +3,15 @@
 #define CHAT_NODE_H
 
 // for constants
+//
+typedef enum 
+{
+  EXIT,
+  JOINED,
+  SUSPENDED,
+  
 
+} ChatState;
 typedef struct ChatNode
 {
     char logical_name[32];
