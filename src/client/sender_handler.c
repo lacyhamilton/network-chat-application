@@ -12,48 +12,44 @@
   different commands or a note the user put in.
 */
 
-void *senderHandler(void* args)
+void *sender_handler(void* args)
 {
 
-  SenderArgs *senderArgs = (SenderArgs*)args;
+  ThreadArgs *local_args = (ThreadArgs *)args;
 
-  char *serverIP = senderArgs->serverIP;
-  char *clientIP = senderArgs->clientIP;
-  char *clientPort = senderArgs->clientPort;
-  char *serverPort = senderArgs->serverPort;
-  ChatState *state= senderArgs->state;
+  NodeState state= local_args->state;
 
-  char *userInput;
+  char user_input[MESSAGE_LEN];
 
-  while(*state != EXIT){
-    scanf("%s", userInput);
-    if(strncmp(userInput, "JOIN", 4) == 0)
+  while(state != EXIT){
+    scanf("%s", user_input);
+    if(strncmp(user_input, "JOIN", 4) == 0)
     {
-      if(*state != JOINED)
+      if(state != JOINED)
       {
         printf("Already joined\n");
       }
       else 
       {
-        *state = JOINED;
+        state = JOINED;
       }
     }
-    else if(strcmp(userInput, "LEAVE") == 0 && *state != JOINED)
+    else if(strcmp(user_input, "LEAVE") == 0 && state != JOINED)
     {
       // disconnect user from the server function
-      *state = SUSPENDED;
+      state = SUSPENDED;
 
       // send leave message to server function
     }
-    else if(strcmp(userInput, "SHUTDOWN") == 0)
+    else if(strcmp(user_input, "SHUTDOWN") == 0)
     {
       // send shutdown message to server function
-      *state = EXIT;
+      state = EXIT;
     }
-    else if(strcmp(userInput, "SHUTDOWN ALL") == 0)
+    else if(strcmp(user_input, "SHUTDOWN ALL") == 0)
     {
       // send shutdown all message to server function
-      *state = EXIT;
+      state = EXIT;
     }
     else
     {

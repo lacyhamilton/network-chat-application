@@ -1,52 +1,30 @@
 #include "main.h"
+#include "receiver_handler.h"
+#include "sender_handler.h"
 
 int main() 
 {
+    //  start listener and chat threads
+    pthread_t listener;
+    pthread_t sender;
 
-  char *logicalName = "";
-  bool join = false;
-  char command[MESSAGE_LEN];
-  char serverIP[24];
-  printf("Type JOIN [server IP] to connect\n");
+    // allocate space for shared arguments to pass to both threads
+    ThreadArgs shared_args;
+    // default ot waiting for entry
+    shared_args.state = SUSPENDED;
+    // read properties data
+    shared_args.property_list = property_read_properties(PROPERTIES_FILE_PATH);
+    // initialize lock
+    pthread_mutex_init(&shared_args.state_lock, NULL);
 
-  while(!join)
-  {
-    scanf("%s %s", command, serverIP);
-    if(strncmp(command, "JOIN", 4) == 0)
-    {
-      join = true;
-    }
-  }
+    // spawn threads
+    pthread_create(&listener, NULL, reciever_handler, (void*)&shared_args);
+    pthread_create(&sender, NULL, sender_handler, (void*)&shared_args);
 
-  char* properties_file = "properties.txt";
-  Properties* properties;
-  properties = property_read_properties(properties_file);
-  char *clientPort= property_get_property(properties, "CLIENT_PORT");
-  char *clientIP= property_get_property(properties, "CLIENT_IP");
-  char *serverPort = property_get_property(properties, "SERVER_PORT");
-  
-  ChatState *state = malloc(sizeof(*state));
+    // wait for threads to finish execution
+    // pthread_join(listener, NULL);
+    pthread_detach(listener);
+    pthread_join(sender, NULL);
 
-
-  SenderArgs *senderArgs = malloc(sizeof(*senderArgs));
-  senderArgs->serverIP = serverIP;
-  senderArgs->serverPort = serverPort;
-  senderArgs->clientPort = clientPort;
-  senderArgs->clientIP = clientIP;
-  senderArgs->logicalName = logicalName;
-  senderArgs->state = state;
-
-  //  start listener and chat threads
-  pthread_t listener;
-  pthread_t sender;
-
-  pthread_create(&listener, NULL, recieverHandler, (void*)senderArgs);
-  pthread_create(&sender, NULL, senderHandler, (void*)senderArgs);
-
-  pthread_join(listener, NULL);
-  pthread_join(sender, NULL);
-
-  free(senderArgs);
-
-  return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }

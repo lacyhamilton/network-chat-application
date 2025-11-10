@@ -3,6 +3,6 @@
 #define SENDER_HANDLER_H
 
 // function prototypes
-void *senderHandler(void *args);
+void *sender_handler(void *args);
 
 #endif // SENDER_HANDLER_H
