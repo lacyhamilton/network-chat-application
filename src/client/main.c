@@ -1,34 +1,43 @@
-#include "../message.h"
-#include "receiver_handler.h"
-#include "sender_handler.h"
 #include "main.h"
 
 int main() 
 {
 
+  char *logicalName = "";
   bool join = false;
   char command[MESSAGE_LEN];
-  char ip[24];
+  char serverIP[24];
   printf("Type JOIN [server IP] to connect\n");
 
   while(!join)
   {
-    scanf("%s %s", command, ip);
+    scanf("%s %s", command, serverIP);
     if(strncmp(command, "JOIN", 4) == 0)
     {
       join = true;
     }
   }
 
-  SenderArgs senderArgs;
-  senderArgs.ip = ip;
+  char* properties_file = "properties.txt";
+  Properties* properties;
+  properties = property_read_properties(properties_file);
+  char *clientPort= property_get_property(properties, "CLIENT_PORT");
+  char *clientIP= property_get_property(properties, "CLIENT_IP");
+  char *serverPort = property_get_property(properties, "SERVER_PORT");
+
+
+  SenderArgs *senderArgs = malloc(sizeof(*senderArgs));
+  senderArgs->serverIP = serverIP;
+  senderArgs->serverPort = serverPort;
+  senderArgs->clientPort = clientPort;
+  senderArgs->clientIP = clientIP;
+  senderArgs->logicalName = logicalName;
   //  start listener and chat threads
   pthread_t listener;
   pthread_t sender;
-  puts("MAIN 28)");
 
-  pthread_create(&listener, NULL, reciever_handler, NULL);
-  pthread_create(&sender, NULL, sender_handler, (void*)&senderArgs);
+  pthread_create(&listener, NULL, recieverHandler, (void*)senderArgs);
+  pthread_create(&sender, NULL, senderHandler, (void*)senderArgs);
 
   pthread_join(listener, NULL);
   pthread_join(sender, NULL);
