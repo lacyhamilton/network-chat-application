@@ -47,7 +47,7 @@ int main()
     server_address.sin_addr.s_addr = htonl(INADDR_ANY); // accept clients on any interface
     server_address.sin_port = htons(atoi(server_port)); // specify port to listen on
 
-    if (bind(server_socket, (struct sockaddr     *)&server_address, sizeof(server_address)) != 0)
+    if (bind(server_socket, (struct sockaddr *)&server_address, sizeof(server_address)) != 0)
     {
         perror("Failed binding socket");
         exit(EXIT_FAILURE);
@@ -60,19 +60,10 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-
-
-
-
-
-
-
     // initialize chat client linked list
     NodeList* chat_clients = malloc(sizeof(NodeList));
     chat_clients->head = NULL;
     pthread_mutex_init(&chat_clients->mutex, NULL);
-
-
 
     // server loop
     while (true)

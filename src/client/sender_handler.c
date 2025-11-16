@@ -13,14 +13,14 @@
   different commands or a note the user put in.
 */
 
-// updates state if not already joined and sends message to server
-static void handle_join(int client_socket, ThreadArgs *args)
+// updates joined state variable if not already joined and sends message to server
+static void handle_join(int client_socket, bool *joined)
 {
 
 }
 
-// updates state if not already left and sends message to server
-static void handle_leave(int client_socket, ThreadArgs *args)
+// updates joined state variable if not already left and sends message to server
+static void handle_leave(int client_socket, bool *joined)
 {
 
 }
@@ -31,16 +31,24 @@ static void handle_post(int client_socket, Message message)
 
 }
 
-// updates state and sends a message to the server
-static void handle_shutdown(int client_socket, ThreadArgs *args)
+// updates joined state variable and sends a message to the server
+static void handle_shutdown(int client_socket, bool *joined)
 {
 
 }
 
+// single sender thread running - no internal synchronization
 void *sender_handler(void* args)
 {
 	// interpret arguments structure
-	ThreadArgs *local_args = (ThreadArgs *)args;
+	// ThreadArgs *local_args = (ThreadArgs *)args;
+
+	Properties *properties = (Properties *)args;
+	ChatNode *node_self = create_node(
+									property_get_property(properties, "MY_IP"),
+									atoi(property_get_property(properties, "MY_PORT")));
+	// state variable to manage sender-side state logic
+	bool joined = false;
 
 	Message message;
 
@@ -54,14 +62,16 @@ void *sender_handler(void* args)
 
 	// create addr struct
 	client_address.sin_family = AF_INET;
-	client_address.sin_addr.s_addr = inet_addr(property_get_property(local_args->property_list, "SERVER_IP"));
-	client_address.sin_port = htons(atoi(property_get_property(local_args->property_list, "SERVER_PORT")));
+	// client_address.sin_addr.s_addr = inet_addr(property_get_property(local_args->property_list, "SERVER_IP"));
+	// client_address.sin_port = htons(atoi(property_get_property(local_args->property_list, "SERVER_PORT")));
+	client_address.sin_addr.s_addr = inet_addr(node_self->ip);
+	client_address.sin_port = htons(node_self->port);
 
 	// ignore SIGPIPE on connection closed
 	signal(SIGPIPE, SIG_IGN);
 
 	// loop while program is running
-	while (local_args->state != EXIT)
+	while (joined)
 	{
 		// get user input
 			// ################## READS INPUT PROPERLY ??? ##################
@@ -88,23 +98,26 @@ void *sender_handler(void* args)
 		switch (message.type)
 		{
 			case JOIN:
-				handle_join(client_socket, local_args);
+				handle_join(client_socket, &joined);
 				break;
 			case LEAVE:
-				handle_leave(client_socket, local_args);
+				handle_leave(client_socket, &joined);
 				break;
 			case POST:
 				handle_post(client_socket, message);
 				break;
 			case SHUTDOWN:
 			case SHUTDOWN_ALL:
-				handle_shutdown(client_socket, local_args);
+				handle_shutdown(client_socket, &joined);
 				break;
 		}
 
 		// close connection
 		close(client_socket);
-	}  
+	}
+
+	// free allocated node
+	free(node_self);
 
   return NULL;
 }

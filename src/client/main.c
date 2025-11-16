@@ -8,23 +8,19 @@ int main()
     pthread_t listener;
     pthread_t sender;
 
-    // allocate space for shared arguments to pass to both threads
-    ThreadArgs shared_args;
-    // default ot waiting for entry
-    shared_args.state = SUSPENDED;
     // read properties data
-    shared_args.property_list = property_read_properties(PROPERTIES_FILE_PATH);
-    // initialize lock
-    pthread_mutex_init(&shared_args.state_lock, NULL);
+    Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
 
     // spawn threads
-    pthread_create(&listener, NULL, reciever_handler, (void*)&shared_args);
-    pthread_create(&sender, NULL, sender_handler, (void*)&shared_args);
+    pthread_create(&listener, NULL, reciever_handler, (void*)property_list);
+    pthread_create(&sender, NULL, sender_handler, (void*)property_list);
 
     // wait for threads to finish execution
-    // pthread_join(listener, NULL);
-    pthread_detach(listener);
-    pthread_join(sender, NULL);
+        // program end on listener receiving 
+    pthread_join(listener, NULL);
+        // sender does not determine program end ????
+    // pthread_join(sender, NULL);
 
+    // sender thread terminates on end of main
     return EXIT_SUCCESS;
 }

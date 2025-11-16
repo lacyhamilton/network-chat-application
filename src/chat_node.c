@@ -9,3 +9,15 @@
   upon chat nodes. One important example is to have code in place that implements linked 
   lists for chat nodes. This code needs to be OUTLINED.
 */
+
+// ################ TODO - DOES THIS MAKE SENSE FOR CLIENT-SENDER LOGIC ???? ##################
+ChatNode *create_node(char *ip, unsigned short int port)
+{
+    return NULL;
+}
+
+// checks if all identifying fields in two nodes are identical
+bool same_node(ChatNode *node1, ChatNode *node2)
+{
+    return false;
+}

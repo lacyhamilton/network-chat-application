@@ -10,6 +10,12 @@ void add_node(NodeList *list, ChatNode *node)
 	pthread_mutex_unlock(&list->mutex);
 }
 
+// iterate through node list, compare elements, and check if node already exists
+bool is_in_list(NodeList *list, ChatNode *node)
+{
+	return false;
+}
+
 void remove_node(NodeList *list, ChatNode *node)
 {
 	pthread_mutex_lock(&list->mutex);
