@@ -16,17 +16,20 @@ bool is_in_list(NodeList *list, ChatNode *node)
 	return false;
 }
 
-void remove_node(NodeList *list, ChatNode *node)
+void remove_node(NodeList *list, ChatNode *target)
 {
-	pthread_mutex_lock(&list->mutex);
-
 	ChatNode *current = list->head;
 	ChatNode *previous = NULL;
 
 	while (current != NULL)
 	{
-		if (current == node)
+		// ########## POINTERS WONT NECESSARILY BE THE SAME ??????? ##############
+		// if (current == target)
+		if (same_node(current, target))
 		{
+			// critical section entry at list modification only
+			pthread_mutex_lock(&list->mutex);
+
 			if (previous == NULL)
 			{
 				list->head = current->next;
@@ -35,12 +38,16 @@ void remove_node(NodeList *list, ChatNode *node)
 			{
 				previous->next = current->next;
 			}
+
+			// modification complete
+			pthread_mutex_unlock(&list->mutex);
+
 			free(current);
 			break;
 		}
+
 		previous = current;
 		current = current->next;
 	}
 
-	pthread_mutex_unlock(&list->mutex);
 }

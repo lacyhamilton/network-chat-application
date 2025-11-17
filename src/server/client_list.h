@@ -14,7 +14,7 @@ typedef struct NodeList
 
 void add_node(NodeList *list, int client_socket);
 
-bool is_in_list(NodeList *list, ChatNode *node);
+bool is_in_list(NodeList *list, ChatNode *target);
 
 void remove_node(NodeList *list, int client_socket);
 

@@ -47,14 +47,9 @@ static void handle_message(int upstream_socket, bool *is_running)
 	// buffer to hold received message
 	Message message;
 	// read from server
-	ssize_t bytes_read = read_message(upstream_socket, &message);
-
-	// check for read error
-	if (bytes_read <= 0)
-	{
-		perror("Read error");
-		return;
-	}
+	// ssize_t bytes_read = read_message(upstream_socket, &message);
+	// check for read status and escape if failed
+	if (!read_message(upstream_socket, &message)) return;
 
 	// check for proper action
 	switch (message.type)
@@ -109,10 +104,9 @@ void *reciever_handler(void *args)
 
 	// bind socket
     address.sin_family = AF_INET;
-    address.sin_addr.s_addr = htonl(INADDR_ANY); 
+    address.sin_addr.s_addr = htonl(INADDR_ANY);
 	// ##################### CHANGE BASED ON PROPERTIES HOLDING IP/PORT ###################
-    // address.sin_port = htons(atoi(property_get_property(local_args->property_list, "NODE_PORT")));
-	address.sin_port = htons(atoi(property_get_property(properties, "NODE_PORT")));
+	address.sin_port = htons(atoi(property_get_property(properties, "MY_PORT")));
 
 	if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) != 0)
     {
@@ -128,53 +122,26 @@ void *reciever_handler(void *args)
 
 	while (is_running)
 	{
-		// dynamically allocate a socket for this iteration
-		int *upstream_socket = (int *)malloc(sizeof(int));
-		// check for failed allocation
-		if (!upstream_socket)
-		{
-			fprintf(stderr, "Failed socket allocation\n");
-			// move to next iteration - maintain server loop
-			continue;
-		}
-		// listen for connection from the server
-		*upstream_socket = accept(listen_socket, NULL, NULL);
+		// single server-component thread - no synchronization with sockets
+		int upstream_socket = accept(listen_socket, NULL, NULL);
 
 		// check for socket creation failure
-		if (*upstream_socket == -1)
+		if (upstream_socket == -1)
 		{
 			fprintf(stderr, "Failed to accept server connection\n");
 			// clean state and move to next iteration
-			free(upstream_socket);
+			close(upstream_socket);
 			continue;
 		}
+
+		handle_message(upstream_socket, &is_running);
+
+		// deallocate socket within iteration's scope
+		close(upstream_socket);
 	}
 
-	// ################# STATE-BASED LOOP BELOW ##############
-	// // loop while the program runs
-	// while (local_args->state != EXIT)
-	// {
-	// 	// check if listen
-	// 	if (local_args->state == JOINED)
-	// 	{
-	// 		// attempt for connection
-	// 		int upstream_socket = accept(listen_socket, NULL, NULL);
-
-	// 		// check if accept fails
-	// 		if (upstream_socket == -1)
-	// 		{
-	// 			perror("Failed to accept server connection");
-	// 			continue; //  do not exit the loop here
-	// 		}
-
-	// 		// get input from server
-	// 		handle_message(upstream_socket,  local_args);
-	// 		// close connection
-	// 		close(upstream_socket);
-	// 	}
-
-	// 	return NULL;
-	// }
+	// free allocated resources
+	close(listen_socket);
 
 	return NULL;
 }

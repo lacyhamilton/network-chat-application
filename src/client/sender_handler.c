@@ -40,11 +40,11 @@ static void handle_shutdown(int client_socket, bool *joined)
 // single sender thread running - no internal synchronization
 void *sender_handler(void* args)
 {
-	// interpret arguments structure
-	// ThreadArgs *local_args = (ThreadArgs *)args;
-
+	// interpret properties list from thread arguments
 	Properties *properties = (Properties *)args;
+	// dynamically allocate node to represent self
 	ChatNode *node_self = create_node(
+									property_get_property(properties, "LOGICAL_NAME"),
 									property_get_property(properties, "MY_IP"),
 									atoi(property_get_property(properties, "MY_PORT")));
 	// state variable to manage sender-side state logic
@@ -60,12 +60,13 @@ void *sender_handler(void* args)
 	int client_socket;
 	struct sockaddr_in client_address;
 
+	// reset memory occupied
+	memset(&client_address, 0, sizeof(client_address));
+
 	// create addr struct
 	client_address.sin_family = AF_INET;
-	// client_address.sin_addr.s_addr = inet_addr(property_get_property(local_args->property_list, "SERVER_IP"));
-	// client_address.sin_port = htons(atoi(property_get_property(local_args->property_list, "SERVER_PORT")));
-	client_address.sin_addr.s_addr = inet_addr(node_self->ip);
-	client_address.sin_port = htons(node_self->port);
+	client_address.sin_addr.s_addr = inet_addr(property_get_property(properties, "SERVER_IP"));
+	client_address.sin_port = htons(atoi(property_get_property(properties, "SERVER_PORT")));
 
 	// ignore SIGPIPE on connection closed
 	signal(SIGPIPE, SIG_IGN);
@@ -79,6 +80,7 @@ void *sender_handler(void* args)
 		// interpret as proper message struct
 		interpret_message(user_input, &message);
 
+		// #################### SOCKET LOGIC REUSE OKAY ???? SCOPE DECLARE HERE ???? ###################
 		client_socket = socket(AF_INET, SOCK_STREAM, 0);
 		if (client_socket == -1)
 		{
@@ -113,11 +115,14 @@ void *sender_handler(void* args)
 		}
 
 		// close connection
-		close(client_socket);
+	    close(client_socket);
 	}
 
-	// free allocated node
-	free(node_self);
+	// free allocated resources
+    close(client_socket);
 
-  return NULL;
+	// deallocate memory
+    free(node_self);
+
+    return NULL;
 }
