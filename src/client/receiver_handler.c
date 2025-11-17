@@ -21,26 +21,28 @@ static void handle_post(Message *message)
 
 }
 
-// updates a node's state if not already joined
-static void handle_join(ThreadArgs *args)
+// logic to process a join message
+static void handle_join(Message *message)
 {
 
 }
 
 // updates a node's state if not already left
-static void handle_leave(ThreadArgs *args)
+static void handle_leave(Message *message)
 {
 
 }
 
-// updates nodes state
-static void handle_shutdown(ThreadArgs *args)
+// logic to handle a command to shutdown from server
+	// updates is_running output parameter
+	// server will always send a SHUTDOWN command to listener when client requests shutdown
+static void handle_shutdown(bool *is_running)
 {
 	
 }
 
 // single-threaded function to read a message from the server and decide on proper action
-static void handle_message(int upstream_socket, ThreadArgs *thread_args)
+static void handle_message(int upstream_socket, bool *is_running)
 {
 	// buffer to hold received message
 	Message message;
@@ -58,17 +60,17 @@ static void handle_message(int upstream_socket, ThreadArgs *thread_args)
 	switch (message.type)
 	{
 		case JOIN:
-			handle_join(thread_args);
+			handle_join(&message);
 			break;
 		case POST:
 			handle_post(&message);
 			break;
 		case LEAVE:
-			handle_leave(thread_args);
+			handle_leave(&message);
 			break;
 		case SHUTDOWN:
 		case SHUTDOWN_ALL:
-			handle_shutdown(thread_args);
+			handle_shutdown(is_running);
 			break;
 	}
 }
@@ -77,7 +79,11 @@ static void handle_message(int upstream_socket, ThreadArgs *thread_args)
 void *reciever_handler(void *args)
 {
 	// properly interpret arguments
-	ThreadArgs *local_args = (ThreadArgs *)(args);
+	// ThreadArgs *local_args = (ThreadArgs *)(args);
+	Properties *properties = (Properties *)(args);
+
+	// state variable for server loop
+	bool is_running = true;
 
 	// create listening socket
 	int listen_socket;
@@ -105,7 +111,8 @@ void *reciever_handler(void *args)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY); 
 	// ##################### CHANGE BASED ON PROPERTIES HOLDING IP/PORT ###################
-    address.sin_port = htons(atoi(property_get_property(local_args->property_list, "NODE_PORT")));
+    // address.sin_port = htons(atoi(property_get_property(local_args->property_list, "NODE_PORT")));
+	address.sin_port = htons(atoi(property_get_property(properties, "NODE_PORT")));
 
 	if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) != 0)
     {
@@ -119,44 +126,55 @@ void *reciever_handler(void *args)
 		exit(EXIT_FAILURE);
 	}
 
-	// loop while the program runs
-	while (local_args->state != EXIT)
+	while (is_running)
 	{
-		// check if listen
-		if (local_args->state == JOINED)
+		// dynamically allocate a socket for this iteration
+		int *upstream_socket = (int *)malloc(sizeof(int));
+		// check for failed allocation
+		if (!upstream_socket)
 		{
-			// attempt for connection
-			int upstream_socket = accept(listen_socket, NULL, NULL);
-
-			// check if accept fails
-			if (upstream_socket == -1)
-			{
-				perror("Failed to accept server connection");
-				continue; //  do not exit the loop here
-			}
-
-			// get input from server
-			handle_message(upstream_socket,  local_args);
-			// close connection
-			close(upstream_socket);
+			fprintf(stderr, "Failed socket allocation\n");
+			// move to next iteration - maintain server loop
+			continue;
 		}
+		// listen for connection from the server
+		*upstream_socket = accept(listen_socket, NULL, NULL);
 
-		return NULL;
+		// check for socket creation failure
+		if (*upstream_socket == -1)
+		{
+			fprintf(stderr, "Failed to accept server connection\n");
+			// clean state and move to next iteration
+			free(upstream_socket);
+			continue;
+		}
 	}
 
-	// char* properties_file = "properties.txt";
-	// Properties* properties;
-	// char* key = "CHAT_PORT";
-	// char* chat_port;
+	// ################# STATE-BASED LOOP BELOW ##############
+	// // loop while the program runs
+	// while (local_args->state != EXIT)
+	// {
+	// 	// check if listen
+	// 	if (local_args->state == JOINED)
+	// 	{
+	// 		// attempt for connection
+	// 		int upstream_socket = accept(listen_socket, NULL, NULL);
 
-	// properties = property_read_properties(properties_file);
-	// chat_port = property_get_property(properties, key);
-	// key = "SERVER_PORT";
-	// char *server_port = property_get_property(properties, key);
-	// key = "SERVER_IP";
-	// char *server_ip= property_get_property(properties, key);
-	// key = "CHAT_IP";
-	// char *chat_ip= property_get_property(properties, key);
+	// 		// check if accept fails
+	// 		if (upstream_socket == -1)
+	// 		{
+	// 			perror("Failed to accept server connection");
+	// 			continue; //  do not exit the loop here
+	// 		}
+
+	// 		// get input from server
+	// 		handle_message(upstream_socket,  local_args);
+	// 		// close connection
+	// 		close(upstream_socket);
+	// 	}
+
+	// 	return NULL;
+	// }
 
 	return NULL;
 }

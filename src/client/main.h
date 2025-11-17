@@ -10,10 +10,11 @@
 
 #define PROPERTIES_FILE_PATH "properties.txt"
 
-// associate chat node ?
-typedef struct
-{
-    NodeState state;
-    pthread_mutex_t state_lock;
-    Properties *property_list;
-} ThreadArgs;
+// ##################### STATE EXISTS IN PROCEDURE ONLY - NO SHARED DATA ###################
+// // associate chat node ?
+// typedef struct
+// {
+//     NodeState state;
+//     pthread_mutex_t state_lock;
+//     Properties *property_list;
+// } ThreadArgs;

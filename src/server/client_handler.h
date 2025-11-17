@@ -2,10 +2,11 @@
 #ifndef CLIENT_HANDLER_H
 #define CLIENT_HANDLER_H
 
-#include "message.h"
-#include "chat_node.h"
+#include "../message.h"
+#include "../chat_node.h"
 #include "client_list.h"
 
+// ############### TODO SHOULD ALSO BE RECEIVING CHATNODE LIST AS A PARAMETER ###################
 typedef struct {
 	int client_socket;
 	NodeList* client_list;

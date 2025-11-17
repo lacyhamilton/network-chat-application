@@ -10,3 +10,28 @@
   handles messages, like sending and receiving them. Again, this code needs 
   to be OUTLINED.
 */
+
+void deserialize_message(Message *message)
+{
+
+}
+
+int interpret_message(char *str_buffer, Message *output_message)
+{
+	return -1;
+}
+
+ssize_t read_message(int upstream_socket, Message *buffer)
+{
+	return 0;
+}
+
+ssize_t send_message(int socket, Message *message)
+{
+	return 0;
+}
+
+void serialize_message(Message *message)
+{
+    
+}
