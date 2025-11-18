@@ -12,11 +12,11 @@ typedef struct NodeList
 } NodeList;
 
 
-void add_node(NodeList *list, int client_socket);
+void add_node(NodeList *list, ChatNode *new_node);
 
-bool is_in_list(NodeList *list, ChatNode *node);
+bool is_in_list(NodeList *list, ChatNode *target);
 
-void remove_node(NodeList *list, int client_socket);
+void remove_node(NodeList *list, ChatNode *target);
 
 
 #endif // CLIENT_LIST_H

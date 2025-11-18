@@ -1,11 +1,11 @@
 #include "client_list.h"
 
-void add_node(NodeList *list, ChatNode *node)
+void add_node(NodeList *list, ChatNode *new_node)
 {
 	pthread_mutex_lock(&list->mutex);
 
-	node->next = list->head;
-	list->head = node;
+	new_node->next = list->head;
+	list->head = new_node;
 
 	pthread_mutex_unlock(&list->mutex);
 }
@@ -16,16 +16,19 @@ bool is_in_list(NodeList *list, ChatNode *node)
 	return false;
 }
 
-void remove_node(NodeList *list, ChatNode *node)
+void remove_node(NodeList *list, ChatNode *target)
 {
-	pthread_mutex_lock(&list->mutex);
-
 	ChatNode *current = list->head;
 	ChatNode *previous = NULL;
 
+	// critical section entry when list access made
+	pthread_mutex_lock(&list->mutex);
+
 	while (current != NULL)
 	{
-		if (current == node)
+		// ########## POINTERS WONT NECESSARILY BE THE SAME ??????? ##############
+		// if (current == target)
+		if (same_node(current, target))
 		{
 			if (previous == NULL)
 			{
@@ -35,12 +38,15 @@ void remove_node(NodeList *list, ChatNode *node)
 			{
 				previous->next = current->next;
 			}
+
 			free(current);
 			break;
 		}
+
 		previous = current;
 		current = current->next;
 	}
-
+	// critical section exit
 	pthread_mutex_unlock(&list->mutex);
+
 }
