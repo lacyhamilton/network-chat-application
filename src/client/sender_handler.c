@@ -48,7 +48,7 @@ void *sender_handler(void* args)
 									property_get_property(properties, "MY_IP"),
 									atoi(property_get_property(properties, "MY_PORT")));
 	// state variable to manage sender-side state logic
-	bool joined = false;
+	bool joined = true;
 
 	Message message;
 
@@ -77,6 +77,7 @@ void *sender_handler(void* args)
 		// get user input
 			// ################## READS INPUT PROPERLY ??? ##################
 		scanf("%s", user_input);
+		// ################## TODO - LOGIC TO SKIP LOOP ITERATION IF BAD MESSAGE INPUT ####################
 		// interpret as proper message struct
 		interpret_message(user_input, &message);
 
@@ -117,9 +118,6 @@ void *sender_handler(void* args)
 		// close connection
 	    close(client_socket);
 	}
-
-	// free allocated resources
-    close(client_socket);
 
 	// deallocate memory
     free(node_self);
