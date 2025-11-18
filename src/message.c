@@ -11,37 +11,8 @@
   to be OUTLINED.
 */
 
-// internally called function to handle full reads
-// static ssize_t read_complete(int upstream_socket, Message *buffer)
-// {
-//     ssize_t message_size = sizeof(*buffer);
-//     ssize_t bytes_read = 0;
-//     // bytes read per iteration
-//     ssize_t iter_read = 0;
-
-//     // loop while bytes remain to read
-//     while (bytes_read < message_size)
-//     {
-//         iter_read = recv(upstream_socket,
-//                             // buffer offset logic
-//                             (char *)buffer + bytes_read,
-//                             message_size - bytes_read,
-//                             0);
-//         // check for error
-//         if (iter_read <= 0)
-//         {
-//             fprintf(stderr, "Read error %zd\n", iter_read);
-//             // send error status to caller
-//             return iter_read;
-//         }
-
-//         bytes_read += iter_read;
-
-//     }
-
-//     return bytes_read;
-// }
-
+// #################### TODO - SHOULD THIS NOT BE STATIC ??? ###################
+// internally called function to read an entire buffer
 static ssize_t read_complete(int upstream_socket, void *buffer, ssize_t size)
 {
     ssize_t bytes_read = 0;
@@ -71,36 +42,7 @@ static ssize_t read_complete(int upstream_socket, void *buffer, ssize_t size)
     return bytes_read;
 }
 
-// // internally called function to handle full sends
-// static ssize_t send_complete(int upstream_socket, Message *message)
-// {
-//     ssize_t message_size = sizeof(*message);
-//     ssize_t bytes_sent = 0;
-//     // bytes sent per iteration
-//     ssize_t iter_send = 0;
-
-//     // loop while bytes to send
-//     while (bytes_sent < message_size)
-//     {
-//         iter_send = send(upstream_socket,
-//                             // buffer offset logic for already sent bytes
-//                             (char *)message + bytes_sent,
-//                             message_size - bytes_sent,
-//                             0);
-//         // check for send failure
-//         if (iter_send <= 0)
-//         {
-//             fprintf(stderr, "Send error %zd\n", iter_send);
-//             // send failure
-//             return iter_send;
-//         }
-
-//         bytes_sent += iter_send;
-//     }
-
-//     return bytes_sent;
-// }
-
+// ############################ TODO - SHOULD BE NOT STATIC ??? CALLED IN OTHER FILES ??? ######################
 // internally called function to handle full sends
 static ssize_t send_complete(int upstream_socket, void *buffer, ssize_t size)
 {
