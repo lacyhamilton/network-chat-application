@@ -33,11 +33,7 @@ typedef struct Message
 
 // function prototypes
 
-// ################ TODO: CHANGE TO BOOL IF MESSAGE TYPE IS NOT IMPORTANT #############
-// take in a string and attempt to create a valid Message struct
-    // return -1 on failure
-int interpret_message(char *str_buffer, Message *output_message);
-
+// read user input until newline and parse into a Message struct (given as output parameter)
 void get_message(Message *output_message);
 
 // function to read a message passed over the internet, returns true if complete read was made
