@@ -15,6 +15,8 @@ int main()
     pthread_create(&listener, NULL, reciever_handler, (void*)property_list);
     pthread_create(&sender, NULL, sender_handler, (void*)property_list);
 
+    pthread_join(sender, NULL);
+
     // wait for threads to finish execution
         // program end on listener receiving 
     pthread_join(listener, NULL);

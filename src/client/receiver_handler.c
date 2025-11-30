@@ -120,6 +120,8 @@ void *reciever_handler(void *args)
 		exit(EXIT_FAILURE);
 	}
 
+	printf("before loop\n");
+
 	while (is_running)
 	{
 		// single server-component thread - no synchronization with sockets

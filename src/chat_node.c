@@ -10,6 +10,8 @@
   lists for chat nodes. This code needs to be OUTLINED.
 */
 
+// ######################################## MAKE SURE POINTERS NOT NULL #######################################33
+
 // ################ TODO - DOES THIS MAKE SENSE FOR CLIENT-SENDER LOGIC ???? ##################
 ChatNode *create_node(char *logical_name, char *ip, unsigned short int port)
 {

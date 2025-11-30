@@ -38,6 +38,8 @@ typedef struct Message
     // return -1 on failure
 int interpret_message(char *str_buffer, Message *output_message);
 
+void get_message(Message *output_message);
+
 // function to read a message passed over the internet, returns true if complete read was made
 bool read_message(int upstream_socket, Message *buffer);
 
