@@ -18,12 +18,34 @@ static void broadcast_message(NodeList *client_list, Message *message)
 {
 	// pointer for read-only list traversal
 	ChatNode *curr_node = NULL;
+	// hold a copy of the list in a local variable - reduce contention
+	ChatNode *copy_head = NULL;
+	// used to hold per-node copy
+	ChatNode *node_copy = NULL;
 
 	// aquire lock on entrance
 	pthread_mutex_lock(&client_list->mutex);
 
 	curr_node = client_list->head;
-	// loop for nodes in the list
+	// copy-over loop for the nodes in the list
+	while (curr_node)
+	{
+		// create a copy of the current node
+		node_copy = create_node(curr_node->logical_name,
+											curr_node->ip,
+											curr_node->port);
+		// add to list at head - NOT STABLE, changes order
+		node_copy->next = copy_head;
+		copy_head = node_copy;
+
+		curr_node = curr_node->next;
+	}
+	// release lock after copy
+	pthread_mutex_unlock(&client_list->mutex);
+
+	// loop for the copy of nodes - avoid socket overhead in critical section
+	curr_node = copy_head;
+
 	while (curr_node)
 	{
 		// check if current node is source
@@ -41,7 +63,7 @@ static void broadcast_message(NodeList *client_list, Message *message)
 		struct sockaddr_in sender_address;
 
 		// reset memory occupied
-		memset(&client_address, 0, sizeof(client_address));
+		memset(&sender_address, 0, sizeof(sender_address));
 
 		// create addr struct
 		sender_address.sin_family = AF_INET;
@@ -59,7 +81,9 @@ static void broadcast_message(NodeList *client_list, Message *message)
 		{
 			perror("Failed connecting to client at host");
 			close(sender_socket);
-			return;
+			// pass node
+			curr_node = curr_node->next;
+			continue;
 		}
 
 		// pass message through current connection
@@ -72,10 +96,16 @@ static void broadcast_message(NodeList *client_list, Message *message)
 		curr_node = curr_node->next;
 	}
 
-	pthread_mutex_unlock(&client_list->mutex);
+	// loop to free nodes
+	while (copy_head)
+	{
+		curr_node = copy_head;
+		copy_head = copy_head->next;
+		free(curr_node);
+	}
 }
 
-void talk_to_client(void* arg)
+void *talk_to_client(void* arg)
 {
 	// cast the arg parameter to a socket descriptor
 		// ################## SHOULD BE CAST TO ClientThreadArgs * TYPE STRUCT ??? ################
@@ -121,7 +151,8 @@ void talk_to_client(void* arg)
 	}
 
 	// deallocate dynamically allocated memory
-	free(args);
+	free(arg);
 
+	return NULL;
 }
     
