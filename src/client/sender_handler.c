@@ -42,6 +42,8 @@ void *sender_handler(void* args)
 {
 	// interpret properties list from thread arguments
 	Properties *properties = (Properties *)args;
+
+	// ############################################### TODO - DYNAMIC MEMORY ALLOCATION CLEARING ON SHUTDOWN RECEIVED ? ##################
 	// dynamically allocate node to represent self
 	ChatNode *node_self = create_node(
 									property_get_property(properties, "LOGICAL_NAME"),
@@ -74,12 +76,8 @@ void *sender_handler(void* args)
 	// loop while program is running
 	while (joined)
 	{
-		// get user input
-			// ################## READS INPUT PROPERLY ??? ##################
-		scanf("%s", user_input);
-		// ################## TODO - LOGIC TO SKIP LOOP ITERATION IF BAD MESSAGE INPUT ####################
-		// interpret as proper message struct
-		interpret_message(user_input, &message);
+		// ###################### todo - client hangs on fgets ? freeing resources ? ################
+		get_message(&message);
 
 		// #################### SOCKET LOGIC REUSE OKAY ???? SCOPE DECLARE HERE ???? ###################
 		client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -97,7 +95,7 @@ void *sender_handler(void* args)
 			continue;
 		}
 
-		// determine proper action
+		// determine proper action - none taken if invalid type
 		switch (message.type)
 		{
 			case JOIN:
