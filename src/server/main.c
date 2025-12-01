@@ -3,7 +3,7 @@
 #include "../properties.h"
 #include <pthread.h>
 #include "client_handler.h"
-#include "chat_node.h"
+#include "../chat_node.h"
 
 // main program
 int main()

@@ -12,9 +12,100 @@
   reflect your understanding of what a certain entry point's job.
 */
 
+// iterate through a list of client nodes and pass a message to all nodes but sender
+// static void broadcast_message(NodeList *client_list, ChatNode *source)
+static void broadcast_message(NodeList *client_list, Message *message)
+{
+	// pointer for read-only list traversal
+	ChatNode *curr_node = NULL;
+	// hold a copy of the list in a local variable - reduce contention
+	ChatNode *copy_head = NULL;
+	// used to hold per-node copy
+	ChatNode *node_copy = NULL;
 
+	// aquire lock on entrance
+	pthread_mutex_lock(&client_list->mutex);
 
-void talk_to_client(void* arg)
+	curr_node = client_list->head;
+	// copy-over loop for the nodes in the list
+	while (curr_node)
+	{
+		// create a copy of the current node
+		node_copy = create_node(curr_node->logical_name,
+											curr_node->ip,
+											curr_node->port);
+		// add to list at head - NOT STABLE, changes order
+		node_copy->next = copy_head;
+		copy_head = node_copy;
+
+		curr_node = curr_node->next;
+	}
+	// release lock after copy
+	pthread_mutex_unlock(&client_list->mutex);
+
+	// loop for the copy of nodes - avoid socket overhead in critical section
+	curr_node = copy_head;
+
+	while (curr_node)
+	{
+		// check if current node is source
+		// if (!strcmp(curr_node->ip, message->chat_node.ip)
+		// 	&& curr_node->port == message->chat_node.port)
+		if (same_node(curr_node, &message->chat_node))
+		{
+			// skip current connection iteration
+			curr_node = curr_node->next;
+			continue;
+		}
+
+		// per-node socket creation
+		int sender_socket;
+		struct sockaddr_in sender_address;
+
+		// reset memory occupied
+		memset(&sender_address, 0, sizeof(sender_address));
+
+		// create addr struct
+		sender_address.sin_family = AF_INET;
+		sender_address.sin_addr.s_addr = inet_addr(curr_node->ip);
+		sender_address.sin_port = htons(curr_node->port);
+
+		// ignore SIGPIPE on connection closed
+		// signal(SIGPIPE, SIG_IGN);
+
+		// assign socket
+		sender_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+		// connect to client's listener - check for failure
+		if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
+		{
+			perror("Failed connecting to client at host");
+			close(sender_socket);
+			// pass node
+			curr_node = curr_node->next;
+			continue;
+		}
+
+		// pass message through current connection
+		send_message(sender_socket, message);
+
+		// close connection
+		close(sender_socket);
+
+		// move to next node
+		curr_node = curr_node->next;
+	}
+
+	// loop to free nodes
+	while (copy_head)
+	{
+		curr_node = copy_head;
+		copy_head = copy_head->next;
+		free(curr_node);
+	}
+}
+
+void *talk_to_client(void* arg)
 {
 	// cast the arg parameter to a socket descriptor
 		// ################## SHOULD BE CAST TO ClientThreadArgs * TYPE STRUCT ??? ################
@@ -59,6 +150,9 @@ void talk_to_client(void* arg)
 		break;
 	}
 
+	// deallocate dynamically allocated memory
+	free(arg);
 
+	return NULL;
 }
     
