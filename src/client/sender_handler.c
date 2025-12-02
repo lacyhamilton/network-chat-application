@@ -56,7 +56,7 @@ void *sender_handler(void* args)
 
 	// buffer for reading user input
 	// ############################ TODO: CHANGE SIZE TO ACCOUNT FOR COMMAND ??? ##########################
-	char user_input[MESSAGE_LEN];
+	// char user_input[MESSAGE_LEN];
 
 	// descriptor for connections made to the server
 	int client_socket;
@@ -79,6 +79,9 @@ void *sender_handler(void* args)
 		// ###################### todo - client hangs on fgets ? freeing resources ? ################
 		get_message(&message);
 
+		// burrow self
+		message.chat_node = *node_self;
+
 		// #################### SOCKET LOGIC REUSE OKAY ???? SCOPE DECLARE HERE ???? ###################
 		client_socket = socket(AF_INET, SOCK_STREAM, 0);
 		if (client_socket == -1)
@@ -99,6 +102,9 @@ void *sender_handler(void* args)
 		switch (message.type)
 		{
 			case JOIN:
+				
+				send_message(client_socket, &message);
+
 				handle_join(client_socket, &joined);
 				break;
 			case LEAVE:

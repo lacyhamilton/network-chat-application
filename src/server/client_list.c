@@ -18,11 +18,13 @@ bool is_in_list(NodeList *list, ChatNode *node)
 
 void remove_node(NodeList *list, ChatNode *target)
 {
-	ChatNode *current = list->head;
+	ChatNode *current = NULL;
 	ChatNode *previous = NULL;
 
 	// critical section entry when list access made
 	pthread_mutex_lock(&list->mutex);
+
+	current = list->head;
 
 	while (current != NULL)
 	{

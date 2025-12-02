@@ -51,6 +51,7 @@ static void broadcast_message(NodeList *client_list, Message *message)
 		// check if current node is source
 		// if (!strcmp(curr_node->ip, message->chat_node.ip)
 		// 	&& curr_node->port == message->chat_node.port)
+
 		if (same_node(curr_node, &message->chat_node))
 		{
 			// skip current connection iteration
@@ -109,9 +110,17 @@ void *talk_to_client(void* arg)
 {
 	// cast the arg parameter to a socket descriptor
 		// ################## SHOULD BE CAST TO ClientThreadArgs * TYPE STRUCT ??? ################
-	int client_socket = *((int *)arg); // assuming arg is a pointer to an int representing the socket descriptor
+	// int client_socket = *((int *)arg); // assuming arg is a pointer to an int representing the socket descriptor
 
+	ClientThreadArgs *local_args = (ClientThreadArgs *)arg;
+
+	// buffer for node creation (in JOIN)
+	ChatNode *new_node = NULL;
+
+	// buffer for receiving a message from connection
 	Message msg;
+
+	read_message(local_args->client_socket, &msg);
 
 	// This is a single switch case because we are not doing persistent connections.
 	switch (msg.type)
@@ -121,6 +130,16 @@ void *talk_to_client(void* arg)
 		// 1. Add the client's ChatNode to the linked list of clients
 		// 2. Send a notification to all other clients that the user has joined
 		// 3. Send acknowledgment to the joining client
+
+		new_node = create_node(msg.chat_node.logical_name,
+								msg.chat_node.ip,
+								msg.chat_node.port);
+
+		// add_node(local_args->client_list, &msg.chat_node);
+		add_node(local_args->client_list, new_node);
+
+		printf("added node named %s at %s %hu\n", msg.chat_node.logical_name, msg.chat_node.ip, msg.chat_node.port);
+		broadcast_message(local_args->client_list, &msg);
 		break;
 
 	case POST:
@@ -149,6 +168,9 @@ void *talk_to_client(void* arg)
 		// 4. Terminate the server application
 		break;
 	}
+
+	// TESTING PHASE ONLY
+	remove_node(local_args->client_list, &msg.chat_node);
 
 	// deallocate dynamically allocated memory
 	free(arg);

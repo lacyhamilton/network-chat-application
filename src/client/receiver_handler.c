@@ -55,6 +55,9 @@ static void handle_message(int upstream_socket, bool *is_running)
 	switch (message.type)
 	{
 		case JOIN:
+
+			printf("received message from %s %s %hu: %s\n", message.chat_node.logical_name, message.chat_node.ip, message.chat_node.port, message.message_data);
+
 			handle_join(&message);
 			break;
 		case POST:
