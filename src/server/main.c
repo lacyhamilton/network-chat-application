@@ -22,7 +22,7 @@ int main()
 
     Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
     // ############### MAKE SURE MATCHES WITH PROPERTIES FILE FIELDS ################
-    char *server_ip = property_get_property(property_list, "SERVER_IP");
+    // char *server_ip = property_get_property(property_list, "SERVER_IP");
     char *server_port = property_get_property(property_list, "SERVER_PORT");
 
     // ignore SIGPIE on client disconnect
@@ -60,6 +60,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
+    // ####################### why is client list dynamically allocated ??? ###############################
     // initialize chat client linked list
     NodeList* chat_clients = malloc(sizeof(NodeList));
     chat_clients->head = NULL;

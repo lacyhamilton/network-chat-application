@@ -1,6 +1,8 @@
 // header files
 #include "receiver_handler.h"
 
+#include <stdatomic.h>
+
 // for ThreadArgs struct
 #include "main.h"
 
@@ -21,13 +23,15 @@ static void handle_post(Message *message)
 
 }
 
-// logic to process a join message
+// logic to process a join message from another client node
 static void handle_join(Message *message)
 {
-
+	// populate formatted string
+	sprintf(message->message_data, "%s joined the chat\n",
+											message->chat_node.logical_name);
 }
 
-// updates a node's state if not already left
+// logic to process a join message from another client node
 static void handle_leave(Message *message)
 {
 
@@ -36,20 +40,30 @@ static void handle_leave(Message *message)
 // logic to handle a command to shutdown from server
 	// updates is_running output parameter
 	// server will always send a SHUTDOWN command to listener when client requests shutdown
-static void handle_shutdown(bool *is_running)
+static void handle_shutdown(atomic_bool *session_end)
 {
 	
 }
 
 // single-threaded function to read a message from the server and decide on proper action
-static void handle_message(int upstream_socket, bool *is_running)
+static void handle_message(int upstream_socket, atomic_bool *session_end)
 {
 	// buffer to hold received message
 	Message message;
-	// read from server
-	// ssize_t bytes_read = read_message(upstream_socket, &message);
+
+	// flag for determining if valid message received
+	bool display_message = true;
+
 	// check for read status and escape if failed
+		// ####################### make sure bfufer is always null terminated #########################
 	if (!read_message(upstream_socket, &message)) return;
+
+	// DEBUG
+	printf("DEBUG: received message from %s %s %hu: %s\n",
+											message.chat_node.logical_name,
+											message.chat_node.ip,
+											message.chat_node.port,
+											message.message_data);
 
 	// check for proper action
 	switch (message.type)
@@ -65,20 +79,29 @@ static void handle_message(int upstream_socket, bool *is_running)
 			break;
 		case SHUTDOWN:
 		case SHUTDOWN_ALL:
-			handle_shutdown(is_running);
+
+			// do not display on shutdown ### correct ? ###
+			display_message = false;
+
+			handle_shutdown(session_end);
+			break;
+		default:
+			// message not recognized - unset display flag
+			display_message = false;
 			break;
 	}
+
+	// ############################ require messages fill \n or append here ? ########################
+		// user input fgets in get_message in src/message.c includes newline or not
+	// check for message display
+	if (display_message) printf("%s", message.message_data);
 }
 
 // primary thread function called from main
 void *reciever_handler(void *args)
 {
 	// properly interpret arguments
-	// ThreadArgs *local_args = (ThreadArgs *)(args);
-	Properties *properties = (Properties *)(args);
-
-	// state variable for server loop
-	bool is_running = true;
+	ThreadArgs *local_args = (ThreadArgs *)(args);
 
 	// create listening socket
 	int listen_socket;
@@ -106,7 +129,7 @@ void *reciever_handler(void *args)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
 	// ##################### CHANGE BASED ON PROPERTIES HOLDING IP/PORT ###################
-	address.sin_port = htons(atoi(property_get_property(properties, "MY_PORT")));
+	address.sin_port = htons(atoi(property_get_property(local_args->property_list, "MY_PORT")));
 
 	if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) != 0)
     {
@@ -120,9 +143,8 @@ void *reciever_handler(void *args)
 		exit(EXIT_FAILURE);
 	}
 
-	printf("before loop\n");
-
-	while (is_running)
+	// loop while session maintained
+	while (!atomic_load(&local_args->session_end))
 	{
 		// single server-component thread - no synchronization with sockets
 		int upstream_socket = accept(listen_socket, NULL, NULL);
@@ -136,7 +158,7 @@ void *reciever_handler(void *args)
 			continue;
 		}
 
-		handle_message(upstream_socket, &is_running);
+		handle_message(upstream_socket, &local_args->session_end);
 
 		// deallocate socket within iteration's scope
 		close(upstream_socket);
