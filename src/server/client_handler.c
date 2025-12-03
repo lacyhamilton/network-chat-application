@@ -106,6 +106,8 @@ static void broadcast_message(NodeList *client_list, Message *message)
 	}
 }
 
+// static void handle_client_join(NodeList *clients)
+
 void *talk_to_client(void* arg)
 {
 	// cast the arg parameter to a socket descriptor

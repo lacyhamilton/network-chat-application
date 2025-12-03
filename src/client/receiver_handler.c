@@ -1,6 +1,8 @@
 // header files
 #include "receiver_handler.h"
 
+#include <stdatomic.h>
+
 // for ThreadArgs struct
 #include "main.h"
 
@@ -36,13 +38,13 @@ static void handle_leave(Message *message)
 // logic to handle a command to shutdown from server
 	// updates is_running output parameter
 	// server will always send a SHUTDOWN command to listener when client requests shutdown
-static void handle_shutdown(bool *is_running)
+static void handle_shutdown(atomic_bool *session_end)
 {
 	
 }
 
 // single-threaded function to read a message from the server and decide on proper action
-static void handle_message(int upstream_socket, bool *is_running)
+static void handle_message(int upstream_socket, atomic_bool *session_end)
 {
 	// buffer to hold received message
 	Message message;
@@ -68,7 +70,7 @@ static void handle_message(int upstream_socket, bool *is_running)
 			break;
 		case SHUTDOWN:
 		case SHUTDOWN_ALL:
-			handle_shutdown(is_running);
+			handle_shutdown(session_end);
 			break;
 	}
 }
@@ -77,11 +79,7 @@ static void handle_message(int upstream_socket, bool *is_running)
 void *reciever_handler(void *args)
 {
 	// properly interpret arguments
-	// ThreadArgs *local_args = (ThreadArgs *)(args);
-	Properties *properties = (Properties *)(args);
-
-	// state variable for server loop
-	bool is_running = true;
+	ThreadArgs *local_args = (ThreadArgs *)(args);
 
 	// create listening socket
 	int listen_socket;
@@ -109,7 +107,7 @@ void *reciever_handler(void *args)
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
 	// ##################### CHANGE BASED ON PROPERTIES HOLDING IP/PORT ###################
-	address.sin_port = htons(atoi(property_get_property(properties, "MY_PORT")));
+	address.sin_port = htons(atoi(property_get_property(local_args->property_list, "MY_PORT")));
 
 	if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) != 0)
     {
@@ -123,9 +121,8 @@ void *reciever_handler(void *args)
 		exit(EXIT_FAILURE);
 	}
 
-	printf("before loop\n");
-
-	while (is_running)
+	// loop while session maintained
+	while (!atomic_load(&local_args->session_end))
 	{
 		// single server-component thread - no synchronization with sockets
 		int upstream_socket = accept(listen_socket, NULL, NULL);
@@ -139,7 +136,7 @@ void *reciever_handler(void *args)
 			continue;
 		}
 
-		handle_message(upstream_socket, &is_running);
+		handle_message(upstream_socket, &local_args->session_end);
 
 		// deallocate socket within iteration's scope
 		close(upstream_socket);

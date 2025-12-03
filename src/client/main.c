@@ -2,6 +2,8 @@
 #include "receiver_handler.h"
 #include "sender_handler.h"
 
+#include <stdatomic.h>
+
 int main() 
 {
     //  start listener and chat threads
@@ -9,11 +11,18 @@ int main()
     pthread_t sender;
 
     // read properties data
-    Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
+    // Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
+    ThreadArgs args =
+    {
+        .property_list = property_read_properties(PROPERTIES_FILE_PATH),
+        .session_end = false
+    };
 
     // spawn threads
-    pthread_create(&listener, NULL, reciever_handler, (void*)property_list);
-    pthread_create(&sender, NULL, sender_handler, (void*)property_list);
+    // pthread_create(&listener, NULL, reciever_handler, (void*)property_list);
+    // pthread_create(&sender, NULL, sender_handler, (void*)property_list);
+    pthread_create(&listener, NULL, reciever_handler, (void*)&args);
+    pthread_create(&sender, NULL, sender_handler, (void*)&args);
 
     pthread_join(sender, NULL);
 
@@ -22,6 +31,9 @@ int main()
     pthread_join(listener, NULL);
         // sender does not determine program end ????
     // pthread_join(sender, NULL);
+
+    // wait for sender thread to process shutdown and release resources
+    pthread_exit(NULL);     // join instead ???
 
     // sender thread terminates on end of main
     return EXIT_SUCCESS;

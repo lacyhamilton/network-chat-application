@@ -11,7 +11,7 @@
 // ############### TODO SHOULD ALSO BE RECEIVING CHATNODE LIST AS A PARAMETER ###################
 typedef struct {
 	int client_socket;		// from client connected by accept
-	NodeList* client_list;	// head of clients known by the server
+	NodeList* client_list;	// head of clients known by the server - dynamically allocated - why ??? ############
 } ClientThreadArgs;
 
 // function prototypes
