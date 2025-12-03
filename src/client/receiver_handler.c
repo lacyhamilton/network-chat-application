@@ -23,13 +23,15 @@ static void handle_post(Message *message)
 
 }
 
-// logic to process a join message
+// logic to process a join message from another client node
 static void handle_join(Message *message)
 {
-
+	// populate formatted string
+	sprintf(message->message_data, "%s joined the chat\n",
+											message->chat_node.logical_name);
 }
 
-// updates a node's state if not already left
+// logic to process a join message from another client node
 static void handle_leave(Message *message)
 {
 
@@ -48,18 +50,25 @@ static void handle_message(int upstream_socket, atomic_bool *session_end)
 {
 	// buffer to hold received message
 	Message message;
-	// read from server
-	// ssize_t bytes_read = read_message(upstream_socket, &message);
+
+	// flag for determining if valid message received
+	bool display_message = true;
+
 	// check for read status and escape if failed
+		// ####################### make sure bfufer is always null terminated #########################
 	if (!read_message(upstream_socket, &message)) return;
+
+	// DEBUG
+	printf("DEBUG: received message from %s %s %hu: %s\n",
+											message.chat_node.logical_name,
+											message.chat_node.ip,
+											message.chat_node.port,
+											message.message_data);
 
 	// check for proper action
 	switch (message.type)
 	{
 		case JOIN:
-
-			printf("received message from %s %s %hu: %s\n", message.chat_node.logical_name, message.chat_node.ip, message.chat_node.port, message.message_data);
-
 			handle_join(&message);
 			break;
 		case POST:
@@ -70,9 +79,22 @@ static void handle_message(int upstream_socket, atomic_bool *session_end)
 			break;
 		case SHUTDOWN:
 		case SHUTDOWN_ALL:
+
+			// do not display on shutdown ### correct ? ###
+			display_message = false;
+
 			handle_shutdown(session_end);
 			break;
+		default:
+			// message not recognized - unset display flag
+			display_message = false;
+			break;
 	}
+
+	// ############################ require messages fill \n or append here ? ########################
+		// user input fgets in get_message in src/message.c includes newline or not
+	// check for message display
+	if (display_message) printf("%s", message.message_data);
 }
 
 // primary thread function called from main

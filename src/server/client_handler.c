@@ -133,6 +133,9 @@ void *talk_to_client(void* arg)
 		// 2. Send a notification to all other clients that the user has joined
 		// 3. Send acknowledgment to the joining client
 
+		// pass join message to all nodes in session
+		broadcast_message(local_args->client_list, &msg);
+
 		new_node = create_node(msg.chat_node.logical_name,
 								msg.chat_node.ip,
 								msg.chat_node.port);
@@ -140,8 +143,10 @@ void *talk_to_client(void* arg)
 		// add_node(local_args->client_list, &msg.chat_node);
 		add_node(local_args->client_list, new_node);
 
-		printf("added node named %s at %s %hu\n", msg.chat_node.logical_name, msg.chat_node.ip, msg.chat_node.port);
-		broadcast_message(local_args->client_list, &msg);
+		printf("DEBUG: added node named %s at %s %hu\n",
+											msg.chat_node.logical_name,
+											msg.chat_node.ip,
+											msg.chat_node.port);
 		break;
 
 	case POST:
@@ -172,7 +177,7 @@ void *talk_to_client(void* arg)
 	}
 
 	// TESTING PHASE ONLY
-	remove_node(local_args->client_list, &msg.chat_node);
+	// remove_node(local_args->client_list, &msg.chat_node);
 
 	// deallocate dynamically allocated memory
 	free(arg);
