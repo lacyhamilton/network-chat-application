@@ -13,11 +13,11 @@ EXECUTABLE="client_$CLIENT_NUM"
 
 RUN_GCC="gcc -Wall src/client/main.c src/client/sender_handler.c src/client/receiver_handler.c src/message.c src/chat_node.c src/properties.c -o $EXECUTABLE -lpthread"
 
-CLIENT_IP="23.254.167.116"
+CLIENT_IP="127.0.0.1"
 CLIENT_PORT=$((8080 + CLIENT_NUM))
 LOGICAL_NAME="client_$CLIENT_NUM"
 
-SERVER_IP="23.254.167.116"
+SERVER_IP="127.0.0.1"
 SERVER_PORT=8080
 
 # logic to write correct data to file
