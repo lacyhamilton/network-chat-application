@@ -13,7 +13,7 @@
 #include "../message.h"
 #include "../properties.h"
 
-#define PROPERTIES_FILE_PATH "properties.txt"
+#define PROPERTIES_FILE_PATH "src/client/properties.txt"
 
 typedef struct
 {

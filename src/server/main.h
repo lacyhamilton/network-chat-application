@@ -20,7 +20,7 @@
 // #include <time.h>
 #include <netdb.h>
 
-#define PROPERTIES_FILE_PATH ""
+#define PROPERTIES_FILE_PATH "src/server/properties.txt"
 #define NUM_CONNECTIONS 20
 
 
