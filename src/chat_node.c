@@ -35,6 +35,7 @@ ChatNode *create_node(char *logical_name, char *ip, unsigned short int port)
 // checks if all identifying fields in two nodes are identical
 bool same_node(ChatNode *node1, ChatNode *node2)
 {
-    return !strcmp(node1->ip, node2->ip)
+    return strcmp(node1->logical_name, node2->logical_name) == 0
+            && strcmp(node1->ip, node2->ip) == 0
 			&& node1->port == node2->port;
 }

@@ -113,8 +113,6 @@ void *sender_handler(void* args)
 		switch (message.type)
 		{
 			case JOIN:
-				
-
 				is_valid = handle_join(&joined);
 				break;
 			case LEAVE:

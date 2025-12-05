@@ -2,10 +2,31 @@
 
 void add_node(NodeList *list, ChatNode *new_node)
 {
+	if (!list || !new_node) return;
+
 	pthread_mutex_lock(&list->mutex);
 
-	new_node->next = list->head;
-	list->head = new_node;
+	// new_node->next = list->head;
+	// list->head = new_node;
+
+	if (!list->head)
+	{
+		list->head = new_node;
+		pthread_mutex_unlock(&list->mutex);
+		return;
+	}
+	
+	// variable for list traversal
+	ChatNode *curr = list->head;
+	while (curr)
+	{
+		if (!curr->next)
+		{
+			curr->next = new_node;
+			curr = NULL;
+		}
+		else curr = curr->next;
+	}
 
 	pthread_mutex_unlock(&list->mutex);
 }

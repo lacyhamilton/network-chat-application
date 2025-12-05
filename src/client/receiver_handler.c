@@ -8,6 +8,8 @@
 
 #include "../chat_node.h"
 #include "../message.h"
+#include "../text_color.h"
+
 
 /*
   here you OUTLINE the code that is being executed in the receiving thread:
@@ -18,23 +20,26 @@
 */
 
 // displays the properly formatted message from a post
-static void handle_post(Message *message)
+static void handle_post(Message *message, char *fill_buff)
 {
-
+	// write in post author to buffer
+	sprintf(fill_buff, "%s: %s\n", message->chat_node.logical_name,
+												message->message_data);
 }
 
 // logic to process a join message from another client node
-static void handle_join(Message *message)
+static void handle_join(Message *message, char *fill_buff)
 {
-	// populate formatted string
-	sprintf(message->message_data, "%s joined the chat\n",
-											message->chat_node.logical_name);
+	// populate output buffer
+	sprintf(fill_buff, "%s joined the chat\n",
+                                            message->chat_node.logical_name);
 }
 
 // logic to process a join message from another client node
-static void handle_leave(Message *message)
+static void handle_leave(Message *message, char *fill_buff)
 {
-
+	// fill output parameter with formatted string
+	sprintf(fill_buff, "%s left the chat\n", message->chat_node.logical_name);
 }
 
 // logic to handle a command to shutdown from server
@@ -51,6 +56,9 @@ static void handle_message(int upstream_socket, atomic_bool *session_end)
 	// buffer to hold received message
 	Message message;
 
+	// ######### todo - cleaner parameterization #########
+	char out_buff[MESSAGE_LEN + LOGICAL_NAME_LEN + sizeof(": ")] = "";
+
 	// flag for determining if valid message received
 	bool display_message = true;
 
@@ -58,24 +66,17 @@ static void handle_message(int upstream_socket, atomic_bool *session_end)
 		// ####################### make sure bfufer is always null terminated #########################
 	if (!read_message(upstream_socket, &message)) return;
 
-	// DEBUG
-	printf("DEBUG: received message from %s %s %hu: %s\n",
-											message.chat_node.logical_name,
-											message.chat_node.ip,
-											message.chat_node.port,
-											message.message_data);
-
 	// check for proper action
 	switch (message.type)
 	{
 		case JOIN:
-			handle_join(&message);
+			handle_join(&message, out_buff);
 			break;
 		case POST:
-			handle_post(&message);
+			handle_post(&message, out_buff);
 			break;
 		case LEAVE:
-			handle_leave(&message);
+			handle_leave(&message, out_buff);
 			break;
 		case SHUTDOWN:
 		case SHUTDOWN_ALL:
@@ -94,7 +95,10 @@ static void handle_message(int upstream_socket, atomic_bool *session_end)
 	// ############################ require messages fill \n or append here ? ########################
 		// user input fgets in get_message in src/message.c includes newline or not
 	// check for message display
-	if (display_message) printf("%s", message.message_data);
+	if (display_message) printf("%s", out_buff);
+
+	// reset buffer
+	out_buff[0] = '\0';
 }
 
 // primary thread function called from main
