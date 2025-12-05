@@ -23,7 +23,8 @@
 static void handle_post(Message *message, char *fill_buff)
 {
 	// write in post author to buffer
-	sprintf(fill_buff, "%s: %s\n", message->chat_node.logical_name,
+	sprintf(fill_buff, NOTE_COLOR "%s: %s" RESET_COLOR "\n",
+												message->chat_node.logical_name,
 												message->message_data);
 }
 
@@ -31,7 +32,7 @@ static void handle_post(Message *message, char *fill_buff)
 static void handle_join(Message *message, char *fill_buff)
 {
 	// populate output buffer
-	sprintf(fill_buff, "%s joined the chat\n",
+	sprintf(fill_buff, JOINED_COLOR "%s joined the chat" RESET_COLOR "\n",
                                             message->chat_node.logical_name);
 }
 
@@ -39,7 +40,8 @@ static void handle_join(Message *message, char *fill_buff)
 static void handle_leave(Message *message, char *fill_buff)
 {
 	// fill output parameter with formatted string
-	sprintf(fill_buff, "%s left the chat\n", message->chat_node.logical_name);
+	sprintf(fill_buff, LEFT_COLOR "%s left the chat" RESET_COLOR "\n",
+											message->chat_node.logical_name);
 }
 
 // logic to handle a command to shutdown from server

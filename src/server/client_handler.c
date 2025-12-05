@@ -1,7 +1,10 @@
 // header files
 #include "client_handler.h"
 
-#include <signal.h>
+#define DBG
+#include "../dbg.h"
+
+// #include <signal.h>
 
 // function definitions
 
@@ -138,7 +141,7 @@ void *talk_to_client(void* arg)
 		// add_node(local_args->client_list, &msg.chat_node);
 		add_node(local_args->client_list, new_node);
 
-		printf("DEBUG: added node named %s at %s %hu\n",
+		debug("added node named %s at %s %hu\n",
 											msg.chat_node.logical_name,
 											msg.chat_node.ip,
 											msg.chat_node.port);
@@ -152,7 +155,7 @@ void *talk_to_client(void* arg)
 		break;
 
 	case LEAVE:
-		printf("DEBUG: removed node named %s at %s %hu\n",
+		debug("removed node named %s at %s %hu\n",
 											msg.chat_node.logical_name,
 											msg.chat_node.ip,
 											msg.chat_node.port);
