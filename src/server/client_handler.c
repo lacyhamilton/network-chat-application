@@ -1,6 +1,8 @@
 // header files
 #include "client_handler.h"
 
+#include <signal.h>
+
 // function definitions
 
 /*
@@ -27,6 +29,7 @@ static void broadcast_message(NodeList *client_list, Message *message)
 	pthread_mutex_lock(&client_list->mutex);
 
 	curr_node = client_list->head;
+
 	// copy-over loop for the nodes in the list
 	while (curr_node)
 	{
@@ -49,9 +52,6 @@ static void broadcast_message(NodeList *client_list, Message *message)
 	while (curr_node)
 	{
 		// check if current node is source
-		// if (!strcmp(curr_node->ip, message->chat_node.ip)
-		// 	&& curr_node->port == message->chat_node.port)
-
 		if (same_node(curr_node, &message->chat_node))
 		{
 			// skip current connection iteration
@@ -71,16 +71,13 @@ static void broadcast_message(NodeList *client_list, Message *message)
 		sender_address.sin_addr.s_addr = inet_addr(curr_node->ip);
 		sender_address.sin_port = htons(curr_node->port);
 
-		// ignore SIGPIPE on connection closed
-		// signal(SIGPIPE, SIG_IGN);
-
 		// assign socket
 		sender_socket = socket(AF_INET, SOCK_STREAM, 0);
 
 		// connect to client's listener - check for failure
 		if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
 		{
-			perror("Failed connecting to client at host");
+			perror("Failed connecting to client");
 			close(sender_socket);
 			// pass node
 			curr_node = curr_node->next;
@@ -105,8 +102,6 @@ static void broadcast_message(NodeList *client_list, Message *message)
 		free(curr_node);
 	}
 }
-
-// static void handle_client_join(NodeList *clients)
 
 void *talk_to_client(void* arg)
 {
@@ -150,11 +145,22 @@ void *talk_to_client(void* arg)
 		break;
 
 	case POST:
+
+		broadcast_message(local_args->client_list, &msg);
 		// 1. Validate that the client is in the linked list of clients
 		// 2. Send the message to all other clients except the sender
 		break;
 
 	case LEAVE:
+		printf("DEBUG: removed node named %s at %s %hu\n",
+											msg.chat_node.logical_name,
+											msg.chat_node.ip,
+											msg.chat_node.port);
+		// remove target from list
+		remove_node(local_args->client_list, &msg.chat_node);
+
+		broadcast_message(local_args->client_list, &msg);
+
 		// 1. Remove the client from the linked list of ChatNodes
 		// 2. Notify all other clients that the user has left
 		// 3. Close the client socket and terminate the thread
@@ -175,9 +181,6 @@ void *talk_to_client(void* arg)
 		// 4. Terminate the server application
 		break;
 	}
-
-	// TESTING PHASE ONLY
-	// remove_node(local_args->client_list, &msg.chat_node);
 
 	// deallocate dynamically allocated memory
 	free(arg);

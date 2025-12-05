@@ -13,7 +13,7 @@ if [ -f "$PROPERTIES_PATH" ]; then
     fi
 
     # open editor for properties file
-    vim "$PROPERTIES_PATH"
+    # vim "$PROPERTIES_PATH"
     
     echo "Running server with properties at $PROPERTIES_PATH"
 

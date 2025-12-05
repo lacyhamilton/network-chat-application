@@ -37,7 +37,7 @@ else
 fi
 
 # display properties and allow user edits
-vim "$PROPERTIES_PATH"
+# vim "$PROPERTIES_PATH"
 
 echo "Program Start"
 

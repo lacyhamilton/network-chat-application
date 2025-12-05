@@ -85,11 +85,14 @@ bool send_message(int socket, Message *message)
     // store bytes sent from send_complete
     ssize_t send_status;
 
+    // create a copy of the given message to send
+    Message send_copy = *message;
+
     // convert byte order
-    to_network_byte_order(message);
+    to_network_byte_order(&send_copy);
 
     // send message over internet
-    send_status = send_complete(socket, message, sizeof(Message));
+    send_status = send_complete(socket, &send_copy, sizeof(Message));
     // check for failure
     if (send_status <= 0)
     {

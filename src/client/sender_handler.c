@@ -32,11 +32,11 @@ static bool handle_join(bool *joined)
 static bool handle_leave(bool *joined)
 {
 	// check if not in session
-	if (*joined) return true;
+	if (!(*joined)) return false;
 
 	*joined = false;
 
-	return false;
+	return true;
 }
 
 // checks for valid state and updates output parameter
@@ -113,8 +113,6 @@ void *sender_handler(void* args)
 		switch (message.type)
 		{
 			case JOIN:
-				
-
 				is_valid = handle_join(&joined);
 				break;
 			case LEAVE:
