@@ -47,10 +47,12 @@ static bool handle_post(bool joined, Message *message)
 	return joined && message->message_data[0] != '\0';
 }
 
+// unecessary check ??? alway will not be session end ???
+
 // updates synchronized atomic state variable and sends a message to the server
-static bool handle_shutdown(bool joined, atomic_bool *session_end)
+static bool handle_shutdown(atomic_bool *session_end)
 {
-	if (joined && !atomic_load(session_end))
+	if (!atomic_load(session_end))
 	{
 		// update session variable
 		atomic_store(session_end, true);
@@ -120,7 +122,7 @@ void *sender_handler(void* args)
 				break;
 			case SHUTDOWN:
 			case SHUTDOWN_ALL:
-				is_valid = handle_shutdown(joined, &local_args->session_end);
+				is_valid = handle_shutdown(&local_args->session_end);
 				break;
 			// command not recognized, do not send to server
 			default:

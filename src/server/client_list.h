@@ -16,7 +16,9 @@ void add_node(NodeList *list, ChatNode *new_node);
 
 bool is_in_list(NodeList *list, ChatNode *target);
 
-void remove_node(NodeList *list, ChatNode *target);
+void safe_remove_node(NodeList *list, ChatNode *target);
+
+void unsafe_remove_node(ChatNode **head, ChatNode *target);
 
 
 #endif // CLIENT_LIST_H

@@ -8,21 +8,12 @@
 // main program
 int main()
 {
-
-   // ******************************************************************** 
-   // these files contain detailed code that is fully functional           
-   // it won't need any more work. Specifically, main.c reads properties   
-   // and then implements the server loop                                  
-   // ******************************************************************** 
-
     // socket information for listening
     int server_socket;
     struct sockaddr_in server_address;
     int yes = 1;
 
     Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
-    // ############### MAKE SURE MATCHES WITH PROPERTIES FILE FIELDS ################
-    // char *server_ip = property_get_property(property_list, "SERVER_IP");
     char *server_port = property_get_property(property_list, "SERVER_PORT");
 
     // ignore SIGPIE on client disconnect
@@ -99,6 +90,8 @@ int main()
         // THREAD DESTRUCTION
         pthread_detach(thread_id);
     }
+
+    pthread_mutex_destroy(&chat_clients->mutex);
 
     return 0;
 }

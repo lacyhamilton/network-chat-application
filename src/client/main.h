@@ -5,8 +5,6 @@
 #include <stdio.h>
 #include <pthread.h>
 
-// gcc -Wall src/client/main.c src/client/sender_handler.c src/client/receiver_handler.c src/message.c src/chat_node.c src/properties.c -o o.exe
-
 // session variable check
 #include <stdatomic.h>
 
