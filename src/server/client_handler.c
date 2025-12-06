@@ -106,6 +106,44 @@ static void broadcast_message(NodeList *client_list, Message *message)
 	}
 }
 
+static void handle_join(NodeList *client_list, Message *message)
+{
+	// node for insertion
+	ChatNode *new_node = NULL;
+
+	new_node = create_node(message->chat_node.logical_name,
+							message->chat_node.ip,
+							message->chat_node.port);
+
+	// insert node to list
+	add_node(client_list, new_node);
+
+	// open connection to send message to caller
+	int sender_socket;
+	struct sockaddr_in sender_address;
+
+	// reset memory occupied
+	memset(&sender_address, 0, sizeof(sender_address));
+
+	// create addr struct - base address by node that exists outside of synchronized list
+	sender_address.sin_family = AF_INET;
+	sender_address.sin_addr.s_addr = inet_addr(message->chat_node.ip);
+	sender_address.sin_port = htons(message->chat_node.port);
+
+	// assign socket
+	sender_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+	// connect to client's listener - check for failure
+	if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
+	{
+		perror("Failed connecting to client");
+		close(sender_socket);
+	}
+
+	// pass message through current connection
+	send_message(sender_socket, message);
+}
+
 void *talk_to_client(void* arg)
 {
 	// cast the arg parameter to a socket descriptor
@@ -115,7 +153,7 @@ void *talk_to_client(void* arg)
 	ClientThreadArgs *local_args = (ClientThreadArgs *)arg;
 
 	// buffer for node creation (in JOIN)
-	ChatNode *new_node = NULL;
+	// ChatNode *new_node = NULL;
 
 	// buffer for receiving a message from connection
 	Message msg;
@@ -134,17 +172,21 @@ void *talk_to_client(void* arg)
 		// pass join message to all nodes in session
 		broadcast_message(local_args->client_list, &msg);
 
-		new_node = create_node(msg.chat_node.logical_name,
-								msg.chat_node.ip,
-								msg.chat_node.port);
+		handle_join(local_args->client_list, &msg);
 
-		// add_node(local_args->client_list, &msg.chat_node);
-		add_node(local_args->client_list, new_node);
+		// broadcast_message(local_args->client_list, &msg);
 
-		debug("added node named %s at %s %hu\n",
-											msg.chat_node.logical_name,
-											msg.chat_node.ip,
-											msg.chat_node.port);
+		// new_node = create_node(msg.chat_node.logical_name,
+		// 						msg.chat_node.ip,
+		// 						msg.chat_node.port);
+
+		// // add_node(local_args->client_list, &msg.chat_node);
+		// add_node(local_args->client_list, new_node);
+
+		// debug("added node named %s at %s %hu\n",
+		// 									msg.chat_node.logical_name,
+		// 									msg.chat_node.ip,
+		// 									msg.chat_node.port);
 		break;
 
 	case POST:
