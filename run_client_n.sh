@@ -9,7 +9,7 @@ else
 fi
 
 PROPERTIES_PATH="src/client/properties.txt"
-EXECUTABLE="client_$CLIENT_NUM"
+EXECUTABLE="client.exe"
 
 RUN_GCC="gcc -Wall src/client/main.c src/client/sender_handler.c src/client/receiver_handler.c src/message.c src/network.c src/chat_node.c src/properties.c -o $EXECUTABLE -lpthread"
 
@@ -28,8 +28,11 @@ echo "LOGICAL_NAME = $LOGICAL_NAME" >> "$PROPERTIES_PATH"
 echo "SERVER_IP = $SERVER_IP" >> "$PROPERTIES_PATH"
 echo "SERVER_PORT = $SERVER_PORT" >> "$PROPERTIES_PATH"
 
+# check for executable already exists
+if [ -f "$EXECUTABLE" ]; then
+    echo "Found executable $EXECUTABLE"
 # compile executable
-if $RUN_GCC; then
+elif $RUN_GCC; then
     echo "Compiled to $EXECUTABLE"
 else
     echo "Compilation error"
@@ -42,3 +45,8 @@ fi
 echo "Program Start"
 
 ./"$EXECUTABLE"
+
+# clean
+rm "$EXECUTABLE"
+
+echo "" > "$PROPERTIES_PATH"

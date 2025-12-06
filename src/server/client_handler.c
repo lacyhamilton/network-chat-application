@@ -9,14 +9,69 @@
 
 // function definitions
 
-/*
-  here, the function is OUTLINED, that is going to implement the code that is being executed
-  in a thread that handles a client request, aka void talk_to_client(void* arg) 
-  (don't put that code into main.c). This function needs to have a big switch statement, its
-  entry points pertain to the different kinds of messages a server may receive from a client.
-  The different entry points need to be sketched out and comments need to be added that
-  reflect your understanding of what a certain entry point's job.
-*/
+// ############################################ utility function prototypes #############################################
+
+static void broadcast_message(NodeList *client_list, Message *message);
+
+static void handle_join(NodeList *client_list, Message *message);
+
+static void handle_leave(NodeList *client_list, Message *message);
+
+static void handle_shutdown(NodeList *client_list, Message *message);
+
+static void handle_shutdown_all(NodeList *client_list, Message *message);
+
+// ############################################ library function definitions ############################################
+
+void *talk_to_client(void* arg)
+{
+	ClientThreadArgs *local_args = (ClientThreadArgs *)arg;
+
+	// buffer for receiving a message from connection
+	Message msg;
+
+	read_message(local_args->client_socket, &msg);
+
+	// This is a single switch case because we are not doing persistent connections.
+	switch (msg.type)
+	{
+	case JOIN:
+		// pass join message to all nodes in session
+		broadcast_message(local_args->client_list, &msg);
+
+		handle_join(local_args->client_list, &msg);
+		break;
+
+	case POST:
+		broadcast_message(local_args->client_list, &msg);
+		break;
+
+	case LEAVE:
+		// call handler to remove node from list and send message to source
+		handle_leave(local_args->client_list, &msg);
+
+		broadcast_message(local_args->client_list, &msg);
+		break;
+
+	// ############### TODO - SHOULD ALSO SEND SHUTDOWN MESSAGE TO CLIENT'S LISTENING COMPONENT ??? ##################
+	case SHUTDOWN: // This works similarly to LEAVE but terminates the chat client
+		handle_shutdown(local_args->client_list, &msg);
+		broadcast_message(local_args->client_list, &msg);
+		break;
+
+	case SHUTDOWN_ALL:
+		// terminate each client individually - no broadcast_message call
+		handle_shutdown_all(local_args->client_list, &msg);
+		break;
+	}
+
+	// deallocate dynamically allocated memory
+	free(arg);
+
+	return NULL;
+}
+
+// ############################################ utility function definitions ############################################
 
 // iterate through a list of client nodes and pass a message to all nodes but sender
 // static void broadcast_message(NodeList *client_list, ChatNode *source)
@@ -86,6 +141,7 @@ static void broadcast_message(NodeList *client_list, Message *message)
 	}
 }
 
+// utility function to add a node to a list and pass the message back to the client's listener
 static void handle_join(NodeList *client_list, Message *message)
 {
 	// node for insertion
@@ -109,6 +165,11 @@ static void handle_join(NodeList *client_list, Message *message)
 	}
 }
 
+// #################### handle_leave and handle_shutdown are currently identical ######################
+	// maybe will need separate logic
+	// IF NOT COMBINE INTO THE SAME FUNCTION
+
+// utility function to remove a node from a list and pass the message back to the client's listener
 static void handle_leave(NodeList *client_list, Message *message)
 {
 	// open connection to send message to caller
@@ -122,68 +183,55 @@ static void handle_leave(NodeList *client_list, Message *message)
 	}
 
 	// clear the node
-	remove_node(client_list, &message->chat_node);
+	safe_remove_node(client_list, &message->chat_node);
 }
 
-void *talk_to_client(void* arg)
+// utility function to pass a shutdown message from a client's sender to their listener
+	// removes the node from the list
+static void handle_shutdown(NodeList *client_list, Message *message)
 {
-	ClientThreadArgs *local_args = (ClientThreadArgs *)arg;
+	int sender_socket = open_connection(&message->chat_node);
 
-	// buffer for receiving a message from connection
-	Message msg;
-
-	read_message(local_args->client_socket, &msg);
-
-	// This is a single switch case because we are not doing persistent connections.
-	switch (msg.type)
+	// check for successful connection
+	if (sender_socket >= 0)
 	{
-	case JOIN:
-		// pass join message to all nodes in session
-		broadcast_message(local_args->client_list, &msg);
-
-		handle_join(local_args->client_list, &msg);
-
-		debug("added node named %s at %s %hu\n",
-											msg.chat_node.logical_name,
-											msg.chat_node.ip,
-											msg.chat_node.port);
-		break;
-
-	case POST:
-		broadcast_message(local_args->client_list, &msg);
-		break;
-
-	case LEAVE:
-		debug("removed node named %s at %s %hu\n",
-											msg.chat_node.logical_name,
-											msg.chat_node.ip,
-											msg.chat_node.port);
-		
-		// call handler to remove node from list and send message to source
-		handle_leave(local_args->client_list, &msg);
-
-		broadcast_message(local_args->client_list, &msg);
-		break;
-
-	// ############### TODO - SHOULD ALSO SEND SHUTDOWN MESSAGE TO CLIENT'S LISTENING COMPONENT ??? ##################
-	case SHUTDOWN: // This works similarly to LEAVE but terminates the chat client
-		// 1. Remove the client from the list of ChatNodes
-		// 2. Notify all other clients that the user has left
-		// 3. Close the client socket and terminate the thread
-		// 4. Terminate the chat client application
-		break;
-
-	case SHUTDOWN_ALL:
-		// 1. Remove all clients from the list of ChatNodes
-		// 2. Notify all clients that the server is shutting down
-		// 3. Close all client sockets and terminate all client threads
-		// 4. Terminate the server application
-		break;
+		send_message(sender_socket, message);
+		close(sender_socket);
 	}
 
-	// deallocate dynamically allocated memory
-	free(arg);
-
-	return NULL;
+	// remove node from session
+	safe_remove_node(client_list, &message->chat_node);
 }
-    
+
+static void handle_shutdown_all(NodeList *client_list, Message *message)
+{
+	ChatNode *head = NULL;
+
+	// critical section access - destructive - selfish hold, no list copies
+	pthread_mutex_lock(&client_list->mutex);
+
+	// assign head
+	head = client_list->head;
+	// unset outside access
+	client_list->head = NULL;
+
+	pthread_mutex_unlock(&client_list->mutex);
+
+	// loop while nodes in list
+	while (head)
+	{
+		// per-iteration socket for message passing
+		int socket = open_connection(head);
+
+		// check for successful connection
+		if (socket >= 0)
+		{
+
+			send_message(socket, message);
+			close(socket);
+		}
+
+		// remove node from session - increments head
+		unsafe_remove_node(&head, head);
+	}
+}
