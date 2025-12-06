@@ -6,11 +6,11 @@
 
 int main(int argc, char *argv[]) 
 {
-    // handle argc/argv for properties path
+    // handle argc argv for properties path
     const char *properties_path = 
         (argc > 1) ? argv[1] : PROPERTIES_FILE_PATH;
 
-    // load properties only once
+    // load properties
     Properties *property_list = property_read_properties(properties_path);
 
     //  start listener and chat threads
@@ -18,7 +18,6 @@ int main(int argc, char *argv[])
     pthread_t sender;
 
     // read properties data
-    // Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
     ThreadArgs args =
     {
         .property_list = property_list,
@@ -26,8 +25,6 @@ int main(int argc, char *argv[])
     };
 
     // spawn threads
-    // pthread_create(&listener, NULL, reciever_handler, (void*)property_list);
-    // pthread_create(&sender, NULL, sender_handler, (void*)property_list);
     pthread_create(&listener, NULL, reciever_handler, (void*)&args);
     pthread_create(&sender, NULL, sender_handler, (void*)&args);
 
