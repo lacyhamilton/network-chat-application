@@ -57,7 +57,7 @@ typedef struct property_list_struct
 Property*     property_new              (char* key, char* value);
 Properties*   property_list_new         (void);
 void          property_list_add_property(Properties* properties, Property* property);
-Properties*   property_read_properties  (char* properties_file);
+Properties*   property_read_properties  (const char* properties_file);
 char*         property_get_property     (Properties* properties, char* key);
 
 #endif /* properties_h */

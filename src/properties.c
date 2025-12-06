@@ -43,7 +43,7 @@ char* property_get_property(Properties* properties, char* key) {
 /* Read properties of "key = value" pairs (mind the spaces)             */
 /* from a properties file and return a pointer to a list of properties  */
 /* ******************************************************************** */
-Properties* property_read_properties(char* properties_file_string)
+Properties* property_read_properties(const char* properties_file_string)
 {
     FILE* properties_file;
     char key[64];
