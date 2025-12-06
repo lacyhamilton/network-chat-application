@@ -1,5 +1,6 @@
 // header files
 #include "client_handler.h"
+#include "../network.h"
 
 #define DBG
 #include "../dbg.h"
@@ -62,36 +63,15 @@ static void broadcast_message(NodeList *client_list, Message *message)
 			continue;
 		}
 
-		// per-node socket creation
-		int sender_socket;
-		struct sockaddr_in sender_address;
+		// try for connection with node
+		int sender_socket = open_connection(curr_node);
 
-		// reset memory occupied
-		memset(&sender_address, 0, sizeof(sender_address));
-
-		// create addr struct
-		sender_address.sin_family = AF_INET;
-		sender_address.sin_addr.s_addr = inet_addr(curr_node->ip);
-		sender_address.sin_port = htons(curr_node->port);
-
-		// assign socket
-		sender_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-		// connect to client's listener - check for failure
-		if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
+		// check for successful connection made
+		if (sender_socket >= 0)
 		{
-			perror("Failed connecting to client");
+			send_message(sender_socket, message);
 			close(sender_socket);
-			// pass node
-			curr_node = curr_node->next;
-			continue;
 		}
-
-		// pass message through current connection
-		send_message(sender_socket, message);
-
-		// close connection
-		close(sender_socket);
 
 		// move to next node
 		curr_node = curr_node->next;
@@ -119,57 +99,27 @@ static void handle_join(NodeList *client_list, Message *message)
 	add_node(client_list, new_node);
 
 	// open connection to send message to caller
-	int sender_socket;
-	struct sockaddr_in sender_address;
-
-	// reset memory occupied
-	memset(&sender_address, 0, sizeof(sender_address));
-
-	// create addr struct - base address by node that exists outside of synchronized list
-	sender_address.sin_family = AF_INET;
-	sender_address.sin_addr.s_addr = inet_addr(message->chat_node.ip);
-	sender_address.sin_port = htons(message->chat_node.port);
-
-	// assign socket
-	sender_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-	// connect to client's listener - check for failure
-	if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
-	{
-		perror("Failed connecting to client");
-		close(sender_socket);
-	}
+	int sender_socket = open_connection(&message->chat_node);
 
 	// pass message through current connection
-	send_message(sender_socket, message);
+	if (sender_socket >= 0)
+	{
+		send_message(sender_socket, message);
+		close(sender_socket);
+	}
 }
 
 static void handle_leave(NodeList *client_list, Message *message)
 {
 	// open connection to send message to caller
-	int sender_socket;
-	struct sockaddr_in sender_address;
+	int sender_socket = open_connection(&message->chat_node);
 
-	// reset memory occupied
-	memset(&sender_address, 0, sizeof(sender_address));
-
-	// create addr struct - base address by node that exists outside of synchronized list
-	sender_address.sin_family = AF_INET;
-	sender_address.sin_addr.s_addr = inet_addr(message->chat_node.ip);
-	sender_address.sin_port = htons(message->chat_node.port);
-
-	// assign socket
-	sender_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-	// connect to client's listener - check for failure
-	if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
+	// check for successful socket creation
+	if (sender_socket >= 0)
 	{
-		perror("Failed connecting to client");
+		send_message(sender_socket, message);
 		close(sender_socket);
 	}
-
-	// pass message through current connection
-	send_message(sender_socket, message);
 
 	// clear the node
 	remove_node(client_list, &message->chat_node);

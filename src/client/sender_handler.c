@@ -2,6 +2,7 @@
 #include "sender_handler.h"
 #include "../chat_node.h"
 #include "../message.h"
+#include "../network.h"
 
 // thread argument access
 #include "main.h"
@@ -77,10 +78,6 @@ void *sender_handler(void* args)
 									atoi(property_get_property(properties, "MY_PORT")));
 	// state variable to manage sender-side state logic
 	bool joined = false;
-
-	// buffer for reading user input
-	// ############################ TODO: CHANGE SIZE TO ACCOUNT FOR COMMAND ??? ##########################
-	// char user_input[MESSAGE_LEN];
 
 	// descriptor for connections made to the server
 	int client_socket;
