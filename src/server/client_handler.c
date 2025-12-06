@@ -127,14 +127,7 @@ static void handle_leave(NodeList *client_list, Message *message)
 
 void *talk_to_client(void* arg)
 {
-	// cast the arg parameter to a socket descriptor
-		// ################## SHOULD BE CAST TO ClientThreadArgs * TYPE STRUCT ??? ################
-	// int client_socket = *((int *)arg); // assuming arg is a pointer to an int representing the socket descriptor
-
 	ClientThreadArgs *local_args = (ClientThreadArgs *)arg;
-
-	// buffer for node creation (in JOIN)
-	// ChatNode *new_node = NULL;
 
 	// buffer for receiving a message from connection
 	Message msg;
@@ -149,13 +142,15 @@ void *talk_to_client(void* arg)
 		broadcast_message(local_args->client_list, &msg);
 
 		handle_join(local_args->client_list, &msg);
+
+		debug("added node named %s at %s %hu\n",
+											msg.chat_node.logical_name,
+											msg.chat_node.ip,
+											msg.chat_node.port);
 		break;
 
 	case POST:
 		broadcast_message(local_args->client_list, &msg);
-		
-		
-
 		break;
 
 	case LEAVE:
