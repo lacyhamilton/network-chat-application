@@ -144,6 +144,37 @@ static void handle_join(NodeList *client_list, Message *message)
 	send_message(sender_socket, message);
 }
 
+static void handle_leave(NodeList *client_list, Message *message)
+{
+	// open connection to send message to caller
+	int sender_socket;
+	struct sockaddr_in sender_address;
+
+	// reset memory occupied
+	memset(&sender_address, 0, sizeof(sender_address));
+
+	// create addr struct - base address by node that exists outside of synchronized list
+	sender_address.sin_family = AF_INET;
+	sender_address.sin_addr.s_addr = inet_addr(message->chat_node.ip);
+	sender_address.sin_port = htons(message->chat_node.port);
+
+	// assign socket
+	sender_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+	// connect to client's listener - check for failure
+	if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
+	{
+		perror("Failed connecting to client");
+		close(sender_socket);
+	}
+
+	// pass message through current connection
+	send_message(sender_socket, message);
+
+	// clear the node
+	remove_node(client_list, &message->chat_node);
+}
+
 void *talk_to_client(void* arg)
 {
 	// cast the arg parameter to a socket descriptor
@@ -164,11 +195,6 @@ void *talk_to_client(void* arg)
 	switch (msg.type)
 	{
 	case JOIN:
-		// 0. Check that the client is not already in the list of clients (avoid repeated JOIN commands)
-		// 1. Add the client's ChatNode to the linked list of clients
-		// 2. Send a notification to all other clients that the user has joined
-		// 3. Send acknowledgment to the joining client
-
 		// pass join message to all nodes in session
 		broadcast_message(local_args->client_list, &msg);
 
@@ -176,10 +202,10 @@ void *talk_to_client(void* arg)
 		break;
 
 	case POST:
-
 		broadcast_message(local_args->client_list, &msg);
-		// 1. Validate that the client is in the linked list of clients
-		// 2. Send the message to all other clients except the sender
+		
+		
+
 		break;
 
 	case LEAVE:
@@ -187,14 +213,11 @@ void *talk_to_client(void* arg)
 											msg.chat_node.logical_name,
 											msg.chat_node.ip,
 											msg.chat_node.port);
-		// remove target from list
-		remove_node(local_args->client_list, &msg.chat_node);
+		
+		// call handler to remove node from list and send message to source
+		handle_leave(local_args->client_list, &msg);
 
 		broadcast_message(local_args->client_list, &msg);
-
-		// 1. Remove the client from the linked list of ChatNodes
-		// 2. Notify all other clients that the user has left
-		// 3. Close the client socket and terminate the thread
 		break;
 
 	// ############### TODO - SHOULD ALSO SEND SHUTDOWN MESSAGE TO CLIENT'S LISTENING COMPONENT ??? ##################

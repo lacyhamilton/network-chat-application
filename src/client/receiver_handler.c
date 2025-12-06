@@ -48,11 +48,22 @@ static void handle_join(Message *message, ChatNode *node_self, char *fill_buff)
 }
 
 // logic to process a join message from another client node
-static void handle_leave(Message *message, char *fill_buff)
+static void handle_leave(Message *message, ChatNode *node_self, char *fill_buff)
 {
-	// fill output parameter with formatted string
-	sprintf(fill_buff, LEFT_COLOR "%s left the chat" RESET_COLOR "\n",
+	// check for self sending message
+	if (same_node(&message->chat_node, node_self))
+	{
+		// interpret server message back to same source
+		sprintf(fill_buff, TEXT_RED "Goodbye" RESET_COLOR "\n");
+	}
+
+	// default - message received from a separate node
+	else
+	{
+		// fill output parameter with formatted string
+		sprintf(fill_buff, LEFT_COLOR "%s left the chat" RESET_COLOR "\n",
 											message->chat_node.logical_name);
+	}
 }
 
 // logic to handle a command to shutdown from server
@@ -89,7 +100,7 @@ static void handle_message(int upstream_socket, ChatNode *node_self, atomic_bool
 			handle_post(&message, out_buff);
 			break;
 		case LEAVE:
-			handle_leave(&message, out_buff);
+			handle_leave(&message, node_self, out_buff);
 			break;
 		case SHUTDOWN:
 		case SHUTDOWN_ALL:
