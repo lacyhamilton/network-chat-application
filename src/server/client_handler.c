@@ -55,11 +55,6 @@ void *talk_to_client(void* arg)
 
 	// ############### TODO - SHOULD ALSO SEND SHUTDOWN MESSAGE TO CLIENT'S LISTENING COMPONENT ??? ##################
 	case SHUTDOWN: // This works similarly to LEAVE but terminates the chat client
-		// 1. Remove the client from the list of ChatNodes
-		// 2. Notify all other clients that the user has left
-		// 3. Close the client socket and terminate the thread
-		// 4. Terminate the chat client application
-
 		handle_shutdown(local_args->client_list, &msg);
 		broadcast_message(local_args->client_list, &msg);
 		break;
@@ -67,7 +62,6 @@ void *talk_to_client(void* arg)
 	case SHUTDOWN_ALL:
 		// terminate each client individually - no broadcast_message call
 		handle_shutdown_all(local_args->client_list, &msg);
-
 		break;
 	}
 

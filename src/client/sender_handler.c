@@ -11,62 +11,22 @@
 
 // function definitions
 
-/*
-  here you OUTLINE the code of the function that is being executed in the sending thread.
-  You have to have the main loop in place that processes the different pieces of information 
-  a user may input. This, again, involves a code structure with entry points to process the 
-  different commands or a note the user put in.
-*/
+// ####################################### utility function prototypes ########################################
 
-// updates thread-local joined state variable if not already joined and sends message to server
-static bool handle_join(bool *joined)
-{
-	// check for already joined - do not allow to run again
-	if (*joined) return false;
+static void handle_join(Message *message, ChatNode *server, bool *joined);
 
-	*joined = true;
+static void handle_leave(Message *message, ChatNode *server, bool *joined);
 
-	return true;
-}
+static void handle_post(Message *message, ChatNode *server, bool joined);
 
-// updates thread-local joined state variable if not already left and sends message to server
-static bool handle_leave(bool *joined)
-{
-	// check if not in session
-	if (!(*joined)) return false;
+static void handle_shutdown(Message *message, ChatNode *server, atomic_bool *session_end);
 
-	*joined = false;
-
-	return true;
-}
-
-// checks for valid state and updates output parameter
-static bool handle_post(bool joined, Message *message)
-{
-	// check for logical connection with server and data to send
-	return joined && message->message_data[0] != '\0';
-}
-
-// unecessary check ??? alway will not be session end ???
-
-// updates synchronized atomic state variable and sends a message to the server
-static bool handle_shutdown(atomic_bool *session_end)
-{
-	if (!atomic_load(session_end))
-	{
-		// update session variable
-		atomic_store(session_end, true);
-		// correct conditions met
-		return true;
-	}
-	return false;
-}
+// ####################################### library function definitions #######################################
 
 // single sender thread running - no internal synchronization
 void *sender_handler(void* args)
 {
-	// interpret properties list from thread arguments
-	// Properties *properties = (Properties *)args;
+	// interpret thread arguments
 	ThreadArgs *local_args = (ThreadArgs *)args;
 	Properties *properties = local_args->property_list;
 
@@ -78,83 +38,44 @@ void *sender_handler(void* args)
 									property_get_property(properties, "LOGICAL_NAME"),
 									property_get_property(properties, "MY_IP"),
 									atoi(property_get_property(properties, "MY_PORT")));
+
+	// represent server for connections
+	ChatNode *server = create_node(
+									"",
+									property_get_property(properties, "SERVER_IP"),
+									atoi(property_get_property(properties, "SERVER_PORT")));
 	// state variable to manage sender-side state logic
 	bool joined = false;
-
-	// descriptor for connections made to the server
-	int client_socket;
-	struct sockaddr_in client_address;
-
-	// burrow self
-	message.chat_node = *node_self;
-
-	// reset memory occupied
-	memset(&client_address, 0, sizeof(client_address));
-
-	// create addr struct
-	client_address.sin_family = AF_INET;
-	client_address.sin_addr.s_addr = inet_addr(property_get_property(properties, "SERVER_IP"));
-	client_address.sin_port = htons(atoi(property_get_property(properties, "SERVER_PORT")));
-
-	// ignore SIGPIPE on connection closed
-	signal(SIGPIPE, SIG_IGN);
 
 	// loop while program is running
 	while (!atomic_load(&local_args->session_end))
 	{
-		// state variable for message type and logic
-		bool is_valid;
 
 		// ###################### todo - client hangs on fgets ? freeing resources ? ################
 		get_message(&message);
+
+		// burrow self
+		message.chat_node = *node_self;
 
 		// determine proper action - none taken if invalid type
 		switch (message.type)
 		{
 			case JOIN:
-				is_valid = handle_join(&joined);
+				handle_join(&message, server, &joined);
 				break;
 			case LEAVE:
-				is_valid = handle_leave(&joined);
+				handle_leave(&message, server, &joined);
 				break;
 			case POST:
-				is_valid = handle_post(joined, &message);
+				handle_post(&message, server, joined);
 				break;
 			case SHUTDOWN:
 			case SHUTDOWN_ALL:
-				is_valid = handle_shutdown(&local_args->session_end);
+				handle_shutdown(&message, server, &local_args->session_end);
 				break;
 			// command not recognized, do not send to server
 			default:
-				// update loop-local state variable
-				is_valid = false;
 				break;
-		}
-
-		// pass correct message to server
-		if (is_valid)
-		{
-
-			// #################### SOCKET LOGIC REUSE OKAY ???? SCOPE DECLARE HERE ???? ###################
-			client_socket = socket(AF_INET, SOCK_STREAM, 0);
-			if (client_socket == -1)
-			{
-				perror("Client socket creation error");
-				continue;
-			}
-
-			// establish connection with server
-			if (connect(client_socket, (struct sockaddr *)&client_address, sizeof(client_address)) == -1)
-			{
-				perror("Connection error");
-				close(client_socket);
-				continue;
-			}
-
-			send_message(client_socket, &message);
-
-			// close connection
-			close(client_socket);
 		}
 
 		// clear the buffer input field
@@ -163,6 +84,79 @@ void *sender_handler(void* args)
 
 	// deallocate memory
     free(node_self);
+	free(server);
 
     return NULL;
+}
+
+// ####################################### utility function definitions #######################################
+
+// updates thread-local joined state variable if not already joined and sends message to server
+static void handle_join(Message *message, ChatNode *server, bool *joined)
+{
+	// check for already joined - do not allow to run again
+	if (*joined) return;
+
+	// attempt connection
+	int socket = open_connection(server);
+	// check for successful connection
+	if (socket >= 0)
+	{
+		// notify join
+		send_message(socket, message);
+		close(socket);
+
+		// update state
+		*joined = true;
+	}
+}
+
+// updates thread-local joined state variable if not already left and sends message to server
+static void handle_leave(Message *message, ChatNode *server, bool *joined)
+{
+	// check if not in session
+	if (!(*joined)) return;
+
+	// attempt connection
+	int socket = open_connection(server);
+	// check for successful connection
+	if (socket >= 0)
+	{
+		// notify join
+		send_message(socket, message);
+		close(socket);
+		// update state
+		*joined = false;
+	}
+}
+
+// checks for valid state and updates output parameter
+static void handle_post(Message *message, ChatNode *server, bool joined)
+{
+	// check if invalid state or nothing to send - exit call
+	if (!joined || message->message_data[0] == '\0') return;
+
+	int socket = open_connection(server);
+
+	// successful message pass
+	if (socket >= 0)
+	{
+		send_message(socket, message);
+		close(socket);
+	}
+}
+
+// updates synchronized atomic state variable and sends a message to the server
+static void handle_shutdown(Message *message, ChatNode *server, atomic_bool *session_end)
+{
+	int socket = open_connection(server);
+
+	if (socket >= 0)
+	{
+		send_message(socket, message);
+		close(socket);
+	}
+
+	// set local end regardless of server communication
+	atomic_store(session_end, true);
 }

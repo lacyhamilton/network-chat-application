@@ -34,6 +34,8 @@ int open_connection(ChatNode *connect_dest)
 	{
 		perror("Failed connecting to client");
 		close(send_socket);
+		// send error
+		return -1;
 	}
 
     return send_socket;

@@ -235,8 +235,6 @@ static void handle_message(int upstream_socket, ChatNode *node_self, atomic_bool
 			break;
 	}
 
-	// ############################ require messages fill \n or append here ? ########################
-		// user input fgets in get_message in src/message.c includes newline or not
 	// check for message display
 	if (display_message) printf("%s", out_buff);
 

@@ -16,6 +16,12 @@ void add_node(NodeList *list, ChatNode *new_node)
 	{
 		list->head = new_node;
 		pthread_mutex_unlock(&list->mutex);
+
+		debug("added node named %s at %s %hu\n",
+											new_node->logical_name,
+											new_node->ip,
+											new_node->port);
+
 		return;
 	}
 	
@@ -45,6 +51,7 @@ bool is_in_list(NodeList *list, ChatNode *node)
 	return false;
 }
 
+// thread-safe - aquires mutex on its own
 void safe_remove_node(NodeList *list, ChatNode *target)
 {
 	// critical section entry when list access made
@@ -57,6 +64,9 @@ void safe_remove_node(NodeList *list, ChatNode *target)
 
 }
 
+// not thread-safe - requires mutex to be aquired before it can be called
+	// requires ownership of the mutex by parent process but function does not care, takes list head only
+	// avoids deadlock if parent has aquired mutex already
 void unsafe_remove_node(ChatNode **head, ChatNode *target)
 {
 	ChatNode *current = NULL;
