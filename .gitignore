@@ -56,3 +56,6 @@ dkms.conf
 
 # vscode configuration folder
 .vscode/
+
+# ignore the client list binary file
+client_list
