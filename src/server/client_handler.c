@@ -173,20 +173,6 @@ void *talk_to_client(void* arg)
 		broadcast_message(local_args->client_list, &msg);
 
 		handle_join(local_args->client_list, &msg);
-
-		// broadcast_message(local_args->client_list, &msg);
-
-		// new_node = create_node(msg.chat_node.logical_name,
-		// 						msg.chat_node.ip,
-		// 						msg.chat_node.port);
-
-		// // add_node(local_args->client_list, &msg.chat_node);
-		// add_node(local_args->client_list, new_node);
-
-		// debug("added node named %s at %s %hu\n",
-		// 									msg.chat_node.logical_name,
-		// 									msg.chat_node.ip,
-		// 									msg.chat_node.port);
 		break;
 
 	case POST:
