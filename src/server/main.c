@@ -6,15 +6,29 @@
 #include "../chat_node.h"
 
 // main program
-int main()
+int main(int argc, char *argv[])
 {
+    // handle argc and argv
+    const char *properties_path;
+
+    if (argc > 1) {
+        properties_path = argv[1];
+    }
+    else {
+        properties_path = PROPERTIES_FILE_PATH;
+    }
+
+    // load properties
+    Properties *property_list = property_read_properties(properties_path);
+    char *server_port = property_get_property(property_list, "SERVER_PORT");
+
     // socket information for listening
     int server_socket;
     struct sockaddr_in server_address;
     int yes = 1;
 
-    Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
-    char *server_port = property_get_property(property_list, "SERVER_PORT");
+    // Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
+    // char *server_port = property_get_property(property_list, "SERVER_PORT");
 
     // ignore SIGPIE on client disconnect
     signal(SIGPIPE, SIG_IGN);
