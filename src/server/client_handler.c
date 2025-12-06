@@ -1,5 +1,6 @@
 // header files
 #include "client_handler.h"
+#include "../network.h"
 
 #define DBG
 #include "../dbg.h"
@@ -62,36 +63,15 @@ static void broadcast_message(NodeList *client_list, Message *message)
 			continue;
 		}
 
-		// per-node socket creation
-		int sender_socket;
-		struct sockaddr_in sender_address;
+		// try for connection with node
+		int sender_socket = open_connection(curr_node);
 
-		// reset memory occupied
-		memset(&sender_address, 0, sizeof(sender_address));
-
-		// create addr struct
-		sender_address.sin_family = AF_INET;
-		sender_address.sin_addr.s_addr = inet_addr(curr_node->ip);
-		sender_address.sin_port = htons(curr_node->port);
-
-		// assign socket
-		sender_socket = socket(AF_INET, SOCK_STREAM, 0);
-
-		// connect to client's listener - check for failure
-		if (connect(sender_socket, (struct sockaddr *)&sender_address, sizeof(sender_address)) == -1)
+		// check for successful connection made
+		if (sender_socket >= 0)
 		{
-			perror("Failed connecting to client");
+			send_message(sender_socket, message);
 			close(sender_socket);
-			// pass node
-			curr_node = curr_node->next;
-			continue;
 		}
-
-		// pass message through current connection
-		send_message(sender_socket, message);
-
-		// close connection
-		close(sender_socket);
 
 		// move to next node
 		curr_node = curr_node->next;
@@ -106,16 +86,48 @@ static void broadcast_message(NodeList *client_list, Message *message)
 	}
 }
 
+static void handle_join(NodeList *client_list, Message *message)
+{
+	// node for insertion
+	ChatNode *new_node = NULL;
+
+	new_node = create_node(message->chat_node.logical_name,
+							message->chat_node.ip,
+							message->chat_node.port);
+
+	// insert node to list
+	add_node(client_list, new_node);
+
+	// open connection to send message to caller
+	int sender_socket = open_connection(&message->chat_node);
+
+	// pass message through current connection
+	if (sender_socket >= 0)
+	{
+		send_message(sender_socket, message);
+		close(sender_socket);
+	}
+}
+
+static void handle_leave(NodeList *client_list, Message *message)
+{
+	// open connection to send message to caller
+	int sender_socket = open_connection(&message->chat_node);
+
+	// check for successful socket creation
+	if (sender_socket >= 0)
+	{
+		send_message(sender_socket, message);
+		close(sender_socket);
+	}
+
+	// clear the node
+	remove_node(client_list, &message->chat_node);
+}
+
 void *talk_to_client(void* arg)
 {
-	// cast the arg parameter to a socket descriptor
-		// ################## SHOULD BE CAST TO ClientThreadArgs * TYPE STRUCT ??? ################
-	// int client_socket = *((int *)arg); // assuming arg is a pointer to an int representing the socket descriptor
-
 	ClientThreadArgs *local_args = (ClientThreadArgs *)arg;
-
-	// buffer for node creation (in JOIN)
-	ChatNode *new_node = NULL;
 
 	// buffer for receiving a message from connection
 	Message msg;
@@ -126,20 +138,10 @@ void *talk_to_client(void* arg)
 	switch (msg.type)
 	{
 	case JOIN:
-		// 0. Check that the client is not already in the list of clients (avoid repeated JOIN commands)
-		// 1. Add the client's ChatNode to the linked list of clients
-		// 2. Send a notification to all other clients that the user has joined
-		// 3. Send acknowledgment to the joining client
-
 		// pass join message to all nodes in session
 		broadcast_message(local_args->client_list, &msg);
 
-		new_node = create_node(msg.chat_node.logical_name,
-								msg.chat_node.ip,
-								msg.chat_node.port);
-
-		// add_node(local_args->client_list, &msg.chat_node);
-		add_node(local_args->client_list, new_node);
+		handle_join(local_args->client_list, &msg);
 
 		debug("added node named %s at %s %hu\n",
 											msg.chat_node.logical_name,
@@ -148,10 +150,7 @@ void *talk_to_client(void* arg)
 		break;
 
 	case POST:
-
 		broadcast_message(local_args->client_list, &msg);
-		// 1. Validate that the client is in the linked list of clients
-		// 2. Send the message to all other clients except the sender
 		break;
 
 	case LEAVE:
@@ -159,14 +158,11 @@ void *talk_to_client(void* arg)
 											msg.chat_node.logical_name,
 											msg.chat_node.ip,
 											msg.chat_node.port);
-		// remove target from list
-		remove_node(local_args->client_list, &msg.chat_node);
+		
+		// call handler to remove node from list and send message to source
+		handle_leave(local_args->client_list, &msg);
 
 		broadcast_message(local_args->client_list, &msg);
-
-		// 1. Remove the client from the linked list of ChatNodes
-		// 2. Notify all other clients that the user has left
-		// 3. Close the client socket and terminate the thread
 		break;
 
 	// ############### TODO - SHOULD ALSO SEND SHUTDOWN MESSAGE TO CLIENT'S LISTENING COMPONENT ??? ##################

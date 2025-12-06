@@ -20,13 +20,3 @@ typedef struct
     Properties *property_list;  // hold all arguments read from file
     atomic_bool session_end;    // allow communication from listener to sender
 } ThreadArgs;
-
-
-// ##################### STATE EXISTS IN PROCEDURE ONLY - NO SHARED DATA ###################
-// // associate chat node ?
-// typedef struct
-// {
-//     NodeState state;
-//     pthread_mutex_t state_lock;
-//     Properties *property_list;
-// } ThreadArgs;

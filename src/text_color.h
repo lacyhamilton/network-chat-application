@@ -13,6 +13,8 @@
 #define LEFT_COLOR   "\e[30m\e[41m\e[1m"
 #define NOTE_COLOR   "\e[30m\e[107m\e[1m"
 
+#define TEXT_RED "\033[91m"
+
 /*
  
 General Pattern

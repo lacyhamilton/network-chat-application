@@ -11,7 +11,7 @@ fi
 PROPERTIES_PATH="src/client/properties.txt"
 EXECUTABLE="client_$CLIENT_NUM"
 
-RUN_GCC="gcc -Wall src/client/main.c src/client/sender_handler.c src/client/receiver_handler.c src/message.c src/chat_node.c src/properties.c -o $EXECUTABLE -lpthread"
+RUN_GCC="gcc -Wall src/client/main.c src/client/sender_handler.c src/client/receiver_handler.c src/message.c src/network.c src/chat_node.c src/properties.c -o $EXECUTABLE -lpthread"
 
 CLIENT_IP="127.0.0.1"
 CLIENT_PORT=$((8080 + CLIENT_NUM))

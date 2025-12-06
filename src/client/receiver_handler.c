@@ -29,19 +29,41 @@ static void handle_post(Message *message, char *fill_buff)
 }
 
 // logic to process a join message from another client node
-static void handle_join(Message *message, char *fill_buff)
+static void handle_join(Message *message, ChatNode *node_self, char *fill_buff)
 {
-	// populate output buffer
-	sprintf(fill_buff, JOINED_COLOR "%s joined the chat" RESET_COLOR "\n",
+	// check for sender as same client
+	if (same_node(&message->chat_node, node_self))
+	{
+		// server message back to source
+		sprintf(fill_buff, TEXT_RED "Welcome" RESET_COLOR "\n");
+	}
+
+	// default
+	else
+	{
+		// populate output buffer
+		sprintf(fill_buff, JOINED_COLOR "%s joined the chat" RESET_COLOR "\n",
                                             message->chat_node.logical_name);
+	}
 }
 
 // logic to process a join message from another client node
-static void handle_leave(Message *message, char *fill_buff)
+static void handle_leave(Message *message, ChatNode *node_self, char *fill_buff)
 {
-	// fill output parameter with formatted string
-	sprintf(fill_buff, LEFT_COLOR "%s left the chat" RESET_COLOR "\n",
+	// check for self sending message
+	if (same_node(&message->chat_node, node_self))
+	{
+		// interpret server message back to same source
+		sprintf(fill_buff, TEXT_RED "Goodbye" RESET_COLOR "\n");
+	}
+
+	// default - message received from a separate node
+	else
+	{
+		// fill output parameter with formatted string
+		sprintf(fill_buff, LEFT_COLOR "%s left the chat" RESET_COLOR "\n",
 											message->chat_node.logical_name);
+	}
 }
 
 // logic to handle a command to shutdown from server
@@ -53,7 +75,7 @@ static void handle_shutdown(atomic_bool *session_end)
 }
 
 // single-threaded function to read a message from the server and decide on proper action
-static void handle_message(int upstream_socket, atomic_bool *session_end)
+static void handle_message(int upstream_socket, ChatNode *node_self, atomic_bool *session_end)
 {
 	// buffer to hold received message
 	Message message;
@@ -72,13 +94,13 @@ static void handle_message(int upstream_socket, atomic_bool *session_end)
 	switch (message.type)
 	{
 		case JOIN:
-			handle_join(&message, out_buff);
+			handle_join(&message, node_self, out_buff);
 			break;
 		case POST:
 			handle_post(&message, out_buff);
 			break;
 		case LEAVE:
-			handle_leave(&message, out_buff);
+			handle_leave(&message, node_self, out_buff);
 			break;
 		case SHUTDOWN:
 		case SHUTDOWN_ALL:
@@ -108,6 +130,12 @@ void *reciever_handler(void *args)
 {
 	// properly interpret arguments
 	ThreadArgs *local_args = (ThreadArgs *)(args);
+
+	// recognize source
+	ChatNode *node_self = create_node(
+						property_get_property(local_args->property_list, "LOGICAL_NAME"),
+						property_get_property(local_args->property_list, "MY_IP"),
+						atoi(property_get_property(local_args->property_list, "MY_PORT")));
 
 	// create listening socket
 	int listen_socket;
@@ -164,7 +192,7 @@ void *reciever_handler(void *args)
 			continue;
 		}
 
-		handle_message(upstream_socket, &local_args->session_end);
+		handle_message(upstream_socket, node_self, &local_args->session_end);
 
 		// deallocate socket within iteration's scope
 		close(upstream_socket);
@@ -172,6 +200,8 @@ void *reciever_handler(void *args)
 
 	// free allocated resources
 	close(listen_socket);
+
+	free(node_self);
 
 	return NULL;
 }
