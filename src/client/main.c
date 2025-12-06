@@ -4,8 +4,15 @@
 
 #include <stdatomic.h>
 
-int main() 
+int main(int argc, char *argv[]) 
 {
+    // handle argc/argv for properties path
+    const char *properties_path = 
+        (argc > 1) ? argv[1] : PROPERTIES_FILE_PATH;
+
+    // load properties only once
+    Properties *property_list = property_read_properties(properties_path);
+
     //  start listener and chat threads
     pthread_t listener;
     pthread_t sender;
@@ -14,7 +21,7 @@ int main()
     // Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
     ThreadArgs args =
     {
-        .property_list = property_read_properties(PROPERTIES_FILE_PATH),
+        .property_list = property_list,
         .session_end = false
     };
 
