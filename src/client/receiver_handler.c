@@ -111,8 +111,6 @@ void *reciever_handler(void *args)
 
 // ######################################### utility funciton definitions ###########################################
 
-// ###### sometimes the RESET_COLOR filter is not being applied
-// ######	I am worried that it might be that one of these formatted strings becomes null terminated
 
 // displays the properly formatted message from a post
 static void handle_post(Message *message, char *fill_buff)

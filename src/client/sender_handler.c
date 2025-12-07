@@ -32,7 +32,6 @@ void *sender_handler(void* args)
 
 	Message message;
 
-	// ############################################### TODO - DYNAMIC MEMORY ALLOCATION CLEARING ON SHUTDOWN RECEIVED ? ##################
 	// dynamically allocate node to represent self
 	ChatNode *node_self = create_node(
 									property_get_property(properties, "LOGICAL_NAME"),

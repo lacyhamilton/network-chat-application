@@ -9,9 +9,6 @@ void add_node(NodeList *list, ChatNode *new_node)
 
 	pthread_mutex_lock(&list->mutex);
 
-	// new_node->next = list->head;
-	// list->head = new_node;
-
 	if (!list->head)
 	{
 		list->head = new_node;

@@ -78,7 +78,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // ####################### why is client list dynamically allocated ??? ###############################
     // initialize chat client linked list
     NodeList* chat_clients = malloc(sizeof(NodeList));
     chat_clients->head = NULL;

@@ -58,7 +58,6 @@ void *talk_to_client(void* arg)
 		broadcast_message(local_args->client_list, &msg);
 		break;
 
-	// ############### TODO - SHOULD ALSO SEND SHUTDOWN MESSAGE TO CLIENT'S LISTENING COMPONENT ??? ##################
 	case SHUTDOWN: // This works similarly to LEAVE but terminates the chat client
 		handle_shutdown(local_args->client_list, &msg);
 		broadcast_message(local_args->client_list, &msg);
@@ -83,7 +82,6 @@ void *talk_to_client(void* arg)
 // ############################################ utility function definitions ############################################
 
 // iterate through a list of client nodes and pass a message to all nodes but sender
-// static void broadcast_message(NodeList *client_list, ChatNode *source)
 static void broadcast_message(NodeList *client_list, Message *message)
 {
 	// pointer for read-only list traversal
@@ -176,8 +174,6 @@ static void handle_join(NodeList *client_list, Message *message)
 }
 
 // #################### handle_leave and handle_shutdown are currently identical ######################
-	// maybe will need separate logic
-	// IF NOT COMBINE INTO THE SAME FUNCTION
 
 // utility function to remove a node from a list and pass the message back to the client's listener
 static void handle_leave(NodeList *client_list, Message *message)
