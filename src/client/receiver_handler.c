@@ -64,7 +64,6 @@ void *reciever_handler(void *args)
 	// bind socket
     address.sin_family = AF_INET;
     address.sin_addr.s_addr = htonl(INADDR_ANY);
-	// ##################### CHANGE BASED ON PROPERTIES HOLDING IP/PORT ###################
 	address.sin_port = htons(atoi(property_get_property(local_args->property_list, "MY_PORT")));
 
 	if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) != 0)
@@ -89,8 +88,10 @@ void *reciever_handler(void *args)
 		if (upstream_socket == -1)
 		{
 			fprintf(stderr, "Failed to accept server connection\n");
+
 			// clean state and move to next iteration
 			close(upstream_socket);
+
 			continue;
 		}
 
@@ -108,11 +109,7 @@ void *reciever_handler(void *args)
 	return NULL;
 }
 
-
 // ######################################### utility funciton definitions ###########################################
-
-// ###### sometimes the RESET_COLOR filter is not being applied
-// ######	I am worried that it might be that one of these formatted strings becomes null terminated
 
 // displays the properly formatted message from a post
 static void handle_post(Message *message, char *fill_buff)
@@ -194,22 +191,18 @@ static void handle_shutdown_all(atomic_bool *session_end, char *fill_buff)
 	atomic_store(session_end, true);
 }
 
-// ############################# server vs client logic is reversed for shutdown vs shutdown_all ##########################
-
 // single-threaded function to read a message from the server and decide on proper action
 static void handle_message(int upstream_socket, ChatNode *node_self, atomic_bool *session_end)
 {
 	// buffer to hold received message
 	Message message;
 
-	// ######### todo - cleaner parameterization #########
 	char out_buff[MESSAGE_LEN + LOGICAL_NAME_LEN + sizeof(": ")] = "";
 
 	// flag for determining if valid message received
 	bool display_message = true;
 
 	// check for read status and escape if failed
-		// ####################### make sure bfufer is always null terminated #########################
 	if (!read_message(upstream_socket, &message)) return;
 
 	// check for proper action

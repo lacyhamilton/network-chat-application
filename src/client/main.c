@@ -36,11 +36,9 @@ int main(int argc, char *argv[])
     // wait for threads to finish execution
         // program end on listener receiving 
     pthread_join(listener, NULL);
-        // sender does not determine program end ????
-    // pthread_join(sender, NULL);
 
     // wait for sender thread to process shutdown and release resources
-    pthread_exit(NULL);     // join instead ???
+    pthread_exit(NULL);
 
     // sender thread terminates on end of main
     return EXIT_SUCCESS;
