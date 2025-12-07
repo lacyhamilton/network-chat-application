@@ -118,7 +118,7 @@ void *reciever_handler(void *args)
 static void handle_post(Message *message, char *fill_buff)
 {
 	// write in post author to buffer
-	sprintf(fill_buff, NOTE_COLOR "%s:" RESET_COLOR " %s\n",
+	sprintf(fill_buff, NOTE_COLOR "%s:" RESET_COLOR " %s",
         					message->chat_node.logical_name,
         					message->message_data);
 
