@@ -211,6 +211,10 @@ static void handle_shutdown(NodeList *client_list, Message *message)
 static void handle_shutdown_all(NodeList *client_list, Message *message)
 {
 	ChatNode *head = NULL;
+	// generic socket used for reaching client nodes, open/close per client
+	int socket;
+	// trace if source node was joined
+	bool source_joined = false;
 
 	// critical section access - destructive - selfish hold, no list copies
 	pthread_mutex_lock(&client_list->mutex);
@@ -226,7 +230,7 @@ static void handle_shutdown_all(NodeList *client_list, Message *message)
 	while (head)
 	{
 		// per-iteration socket for message passing
-		int socket = open_connection(head);
+		socket = open_connection(head);
 
 		// check for successful connection
 		if (socket >= 0)
@@ -236,7 +240,24 @@ static void handle_shutdown_all(NodeList *client_list, Message *message)
 			close(socket);
 		}
 
+		// check if node was source
+		if (same_node(head, &message->chat_node)) source_joined = true;
+
 		// remove node from session - increments head
 		unsafe_remove_node(&head, head);
 	}
+
+	// check if need pass message to source
+	if (!source_joined)
+	{
+		// pass message back to caller
+		socket = open_connection(&message->chat_node);
+
+		if (socket >= 0)
+		{
+			send_message(socket, message);
+			close(socket);
+		}
+	}
+	
 }
