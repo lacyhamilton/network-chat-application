@@ -19,7 +19,11 @@ static void handle_leave(NodeList *client_list, Message *message);
 
 static void handle_shutdown(NodeList *client_list, Message *message);
 
-static void handle_shutdown_all(NodeList *client_list, Message *message);
+static void handle_shutdown_all(NodeList *client_list,
+									Message *message,
+									ChatNode *server_node,
+									atomic_bool *enter_shutdown,
+									atomic_bool *session_end);
 
 // ############################################ library function definitions ############################################
 
@@ -40,9 +44,6 @@ void *talk_to_client(void* arg)
 		broadcast_message(local_args->client_list, &msg);
 
 		handle_join(local_args->client_list, &msg);
-
-		// server console notification
-		printf("Client connected!");
 
 		break;
 
@@ -65,7 +66,11 @@ void *talk_to_client(void* arg)
 
 	case SHUTDOWN_ALL:
 		// terminate each client individually - no broadcast_message call
-		handle_shutdown_all(local_args->client_list, &msg);
+		handle_shutdown_all(local_args->client_list,
+											&msg,
+											local_args->node_self,
+											local_args->enter_shutdown,
+											local_args->session_end);
 		break;
 	}
 
@@ -208,9 +213,20 @@ static void handle_shutdown(NodeList *client_list, Message *message)
 	safe_remove_node(client_list, &message->chat_node);
 }
 
-static void handle_shutdown_all(NodeList *client_list, Message *message)
+static void handle_shutdown_all(NodeList *client_list,
+									Message *message,
+									ChatNode *server_node,
+									atomic_bool *enter_shutdown,
+									atomic_bool *session_end)
 {
 	ChatNode *head = NULL;
+	// generic socket used for reaching client nodes, open/close per client
+	int socket;
+	// trace if source node was joined
+	bool source_joined = false;
+
+	// test-and-set for another client running shutdown_all for termiantion
+	if (atomic_exchange(enter_shutdown, true)) return;
 
 	// critical section access - destructive - selfish hold, no list copies
 	pthread_mutex_lock(&client_list->mutex);
@@ -226,7 +242,7 @@ static void handle_shutdown_all(NodeList *client_list, Message *message)
 	while (head)
 	{
 		// per-iteration socket for message passing
-		int socket = open_connection(head);
+		socket = open_connection(head);
 
 		// check for successful connection
 		if (socket >= 0)
@@ -236,7 +252,35 @@ static void handle_shutdown_all(NodeList *client_list, Message *message)
 			close(socket);
 		}
 
+		// check if node was source
+		if (same_node(head, &message->chat_node)) source_joined = true;
+
 		// remove node from session - increments head
 		unsafe_remove_node(&head, head);
+	}
+
+	// check if need pass message to source
+	if (!source_joined)
+	{
+		// pass message back to caller
+		socket = open_connection(&message->chat_node);
+
+		if (socket >= 0)
+		{
+			send_message(socket, message);
+			close(socket);
+		}
+	}
+
+	// update state
+	atomic_store(session_end, true);
+
+	// pass message to waiting accept() in main - force exit
+	socket = open_connection(server_node);
+
+	if (socket >= 0)
+	{
+		send_message(socket, message);
+		close(socket);
 	}
 }
