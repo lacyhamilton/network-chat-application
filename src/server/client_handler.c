@@ -44,9 +44,6 @@ void *talk_to_client(void* arg)
 		// server console notification
 		printf("Client connected!");
 
-		// debug info to server console
-		//debug("[handle_request] thread ID %lu socket closed: %d",);
-
 		break;
 
 	case POST:
