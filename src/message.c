@@ -52,6 +52,8 @@ void get_message(Message *output_message)
 
     output_message->type = type;
     strcpy(output_message->message_data, buffer);
+
+    output_message->message_data[MESSAGE_LEN - 1] = '\0';
 }
 
 // ############## TODO - MAKE SURE GRACEFUL SHUTDOWN NEVER OCCURS DURING FUNCTION SCOPE - WILL BE INTERPRETED AS A FAILURE #################
@@ -114,15 +116,17 @@ static MessageType get_message_type(char *command)
     // check for no differences
     else if (!strcmp(command, "join")) return JOIN;
 
-
     else if (!strcmp(command, "leave")) return LEAVE;
 
     else if (!strcmp(command, "shutdown")) return SHUTDOWN;
 
     else if (!strcmp(command, "shutdown_all")) return SHUTDOWN_ALL;
 
+    // check for any input given
+    else if (command[0] != '\0') return POST;
+
     // default to a post on an unrecognized command
-    return POST;
+    return -1;
 }
 
 // utility function to check if a character is a whitespace character

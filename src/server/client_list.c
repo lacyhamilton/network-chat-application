@@ -45,12 +45,6 @@ void add_node(NodeList *list, ChatNode *new_node)
 											new_node->port);
 }
 
-// iterate through node list, compare elements, and check if node already exists
-bool is_in_list(NodeList *list, ChatNode *node)
-{
-	return false;
-}
-
 // thread-safe - aquires mutex on its own
 void safe_remove_node(NodeList *list, ChatNode *target)
 {
