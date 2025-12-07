@@ -5,18 +5,21 @@
 
 void add_node(NodeList *list, ChatNode *new_node)
 {
+	// check for errors
 	if (!list || !new_node) return;
 
+	// critical section entry
 	pthread_mutex_lock(&list->mutex);
 
-	// new_node->next = list->head;
-	// list->head = new_node;
-
+	// check for empty list
 	if (!list->head)
 	{
 		list->head = new_node;
+
+		// exit critical section
 		pthread_mutex_unlock(&list->mutex);
 
+		// debug message to server
 		debug("added node named %s at %s %hu\n",
 											new_node->logical_name,
 											new_node->ip,
@@ -27,28 +30,29 @@ void add_node(NodeList *list, ChatNode *new_node)
 	
 	// variable for list traversal
 	ChatNode *curr = list->head;
+
+	// iterate to end of list
 	while (curr)
 	{
+		// check for end of list
 		if (!curr->next)
 		{
 			curr->next = new_node;
 			curr = NULL;
 		}
+
+		// move to next node
 		else curr = curr->next;
 	}
 
+	// critical section exit
 	pthread_mutex_unlock(&list->mutex);
 
+	// debug message to server
 	debug("added node named %s at %s %hu\n",
 											new_node->logical_name,
 											new_node->ip,
 											new_node->port);
-}
-
-// iterate through node list, compare elements, and check if node already exists
-bool is_in_list(NodeList *list, ChatNode *node)
-{
-	return false;
 }
 
 // thread-safe - aquires mutex on its own
@@ -74,6 +78,7 @@ void unsafe_remove_node(ChatNode **head, ChatNode *target)
 
 	current = *head;
 
+	// iterate through list to find target node
 	while (current != NULL)
 	{
 		if (same_node(current, target))
@@ -88,6 +93,7 @@ void unsafe_remove_node(ChatNode **head, ChatNode *target)
 				previous->next = current->next;
 			}
 
+			// debug message to server
 			debug("removed node named %s at %s %hu\n",
 											current->logical_name,
 											current->ip,
@@ -97,8 +103,8 @@ void unsafe_remove_node(ChatNode **head, ChatNode *target)
 			return;
 		}
 
+		// move to next node
 		previous = current;
 		current = current->next;
 	}
-
 }

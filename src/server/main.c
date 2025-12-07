@@ -78,7 +78,6 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    // ####################### why is client list dynamically allocated ??? ###############################
     // initialize chat client linked list
     NodeList* chat_clients = malloc(sizeof(NodeList));
     chat_clients->head = NULL;
@@ -90,11 +89,9 @@ int main(int argc, char *argv[])
     // server loop
     while (true)
     {
-        // Identify clients by IP/port.
-        // This info will be manually added to the properties file in key-value pairs, where we can retrieve it for use here.
-
         // accept a client connection
         int client_socket = accept(server_socket, NULL, NULL);
+
         // check if accept fails
         if (client_socket == -1)
         {

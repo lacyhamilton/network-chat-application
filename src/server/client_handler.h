@@ -9,7 +9,6 @@
 #include "../chat_node.h"
 #include "client_list.h"
 
-// ############### TODO SHOULD ALSO BE RECEIVING CHATNODE LIST AS A PARAMETER ###################
 typedef struct {
 	int client_socket;			// from client connected by accept
 	ChatNode *node_self;		// remember self - allow self-shutdown

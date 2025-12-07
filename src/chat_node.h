@@ -7,19 +7,11 @@
 #include <string.h>
 #include <stdbool.h>
 
-// for constants
-//
-// ################ STATES NOT NEEDED ??? IMPLEMENTED THROUGH PROCEDURE ###########
-// typedef enum 
-// {
-//     EXIT,
-//     JOINED,
-//     SUSPENDED,
-// } NodeState;
-
+// constants
 #define IP_STR_LEN 15
 #define LOGICAL_NAME_LEN 32
 
+// ChatNode struct definition
 typedef struct ChatNode
 {
     char logical_name[LOGICAL_NAME_LEN];
@@ -30,7 +22,6 @@ typedef struct ChatNode
 
 // function prototypes
 
-// dynamically allocates a ChatNode struct and returns a pointer to it
 ChatNode *create_node(char *logical_name, char *ip, unsigned short int port);
 
 bool same_node(ChatNode *node1, ChatNode *node2);

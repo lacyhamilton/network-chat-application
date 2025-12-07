@@ -1,16 +1,6 @@
 // header files
 #include "message.h"
 
-// function definitions
-
-/*
-  similarly, you need to have a structure in place that represents messages. 
-  Messages have a type and other information, i.e. chat_node information and 
-  text that represents a NOTE. Here, you will also have code in place that 
-  handles messages, like sending and receiving them. Again, this code needs 
-  to be OUTLINED.
-*/
-
 // ###################################### utility function prototypes #######################################
 
 static MessageType get_message_type(char *command);
@@ -54,7 +44,6 @@ void get_message(Message *output_message)
     strcpy(output_message->message_data, buffer);
 }
 
-// ############## TODO - MAKE SURE GRACEFUL SHUTDOWN NEVER OCCURS DURING FUNCTION SCOPE - WILL BE INTERPRETED AS A FAILURE #################
 bool read_message(int upstream_socket, Message *buffer)
 {
     // store the return from read_complete
@@ -66,6 +55,7 @@ bool read_message(int upstream_socket, Message *buffer)
     if (read_status <= 0)
     {
         fprintf(stderr, "Failed to read message, status %zd\n", read_status);
+
         // read failure
         return false;
     }
@@ -104,7 +94,6 @@ bool send_message(int socket, Message *message)
 
 // ############################### utility function definitions #################################
 
-// ################################## TODO - ADD NO_MESSAGE MESSAGE TYPE ??? #######################
 // return type of message if command matches, -1 otherwise
 static MessageType get_message_type(char *command)
 {
@@ -113,7 +102,6 @@ static MessageType get_message_type(char *command)
 
     // check for no differences
     else if (!strcmp(command, "join")) return JOIN;
-
 
     else if (!strcmp(command, "leave")) return LEAVE;
 
@@ -136,6 +124,7 @@ static void parse_word(char *buffer, char *first_word)
 {
     // count size of first word
     int word_size = 0;
+
     // clear output buffer
     first_word[0] = '\0';
 
@@ -165,7 +154,6 @@ static void parse_word(char *buffer, char *first_word)
     while (is_white_space(buffer[buff_index])) buff_index++;
 }
 
-// #################### TODO - SHOULD THIS NOT BE STATIC ??? ###################
 // internally called function to read an entire buffer
 static ssize_t read_complete(int upstream_socket, void *buffer, ssize_t size)
 {
@@ -196,7 +184,6 @@ static ssize_t read_complete(int upstream_socket, void *buffer, ssize_t size)
     return bytes_read;
 }
 
-// ############################ TODO - SHOULD BE NOT STATIC ??? CALLED IN OTHER FILES ??? ######################
 // internally called function to handle full sends
 static ssize_t send_complete(int upstream_socket, void *buffer, ssize_t size)
 {
@@ -245,7 +232,6 @@ static char to_lower(char c)
     return c;
 }
 
-// ############## MODIFICATIONS MADE IN PLACE - MAKE SURE NO MESSAG USE AFTER SEND ##################
 // utility function called by send_message to convert a struct to internet byte order
 static void to_network_byte_order(Message *message)
 {
