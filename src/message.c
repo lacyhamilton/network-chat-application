@@ -17,7 +17,7 @@ static MessageType get_message_type(char *command);
 
 static bool is_white_space(char character);
 
-static void parse_word(char **buffer, char *first_word);
+static void parse_word(char *buffer, char *first_word);
 
 static ssize_t read_complete(int upstream_socket, void *buffer, ssize_t size);
 
@@ -39,9 +39,6 @@ void get_message(Message *output_message)
     // hold first word - represent message type
     char command[MESSAGE_LEN];
 
-    // point to buffer for parameter
-    char *buf_ptr = buffer;
-
     // hold the type of message
     MessageType type;
 
@@ -49,12 +46,12 @@ void get_message(Message *output_message)
     fgets(buffer, MESSAGE_LEN, stdin);
 
     // check for valid message
-    parse_word(&buf_ptr, command);
+    parse_word(buffer, command);
 
     type = get_message_type(command);
 
     output_message->type = type;
-    strcpy(output_message->message_data, buf_ptr);
+    strcpy(output_message->message_data, buffer);
 }
 
 // ############## TODO - MAKE SURE GRACEFUL SHUTDOWN NEVER OCCURS DURING FUNCTION SCOPE - WILL BE INTERPRETED AS A FAILURE #################
@@ -138,36 +135,37 @@ static bool is_white_space(char character)
 }
 
 // take in a character buffer as input and write the first word into the output
-static void parse_word(char **buffer, char *first_word)
+static void parse_word(char *buffer, char *first_word)
 {
     // count size of first word
     int word_size = 0;
     // clear output buffer
     first_word[0] = '\0';
 
-    // pass leading whitespace
-    while (is_white_space(**buffer)) (*buffer)++;
+    int buff_index = 0;
 
-    // ######################## needs logic to keep reading if command is shutdown ?? whitespace not correct logic ??? ####################
+    // pass leading whitespace
+    while (is_white_space(buffer[buff_index])) buff_index++;
+
     // loop while not at end of string
-    while (word_size < MESSAGE_LEN && **buffer != '\0')
+    while (word_size < MESSAGE_LEN && buffer[buff_index] != '\0')
     {
         // check for whitespace
-        if (is_white_space(**buffer)) break;
+        if (is_white_space(buffer[buff_index])) break;
         
         // copy over character
-        first_word[word_size] = to_lower(**buffer);
+        first_word[word_size] = to_lower(buffer[buff_index]);
 
         // increment pointer
         word_size++;
-        (*buffer)++;
+        buff_index++;
 
         // update state
         first_word[word_size] = '\0';
     }
 
     // pass trailing whitespace from first word
-    while (is_white_space(**buffer)) (*buffer)++;
+    while (is_white_space(buffer[buff_index])) buff_index++;
 }
 
 // #################### TODO - SHOULD THIS NOT BE STATIC ??? ###################
