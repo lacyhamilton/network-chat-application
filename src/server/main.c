@@ -5,6 +5,8 @@
 #include "client_handler.h"
 #include "../chat_node.h"
 
+#include <stdatomic.h>
+
 #define DBG
 #include "../dbg.h"
 
@@ -13,6 +15,18 @@ int main(int argc, char *argv[])
 {
     // handle argc and argv
     const char *properties_path;
+    char *server_port = NULL;
+
+    atomic_bool enter_shutdown = false;
+    atomic_bool session_end = false;
+
+    // used to track self port/ip combo - pass to threads to allow termination
+    ChatNode *node_self = NULL;
+
+    // socket information for listening
+    int server_socket;
+    struct sockaddr_in server_address;
+    int yes = 1;
 
     if (argc > 1) {
         properties_path = argv[1];
@@ -23,15 +37,11 @@ int main(int argc, char *argv[])
 
     // load properties
     Properties *property_list = property_read_properties(properties_path);
-    char *server_port = property_get_property(property_list, "SERVER_PORT");
+    server_port = property_get_property(property_list, "SERVER_PORT");
 
-    // socket information for listening
-    int server_socket;
-    struct sockaddr_in server_address;
-    int yes = 1;
-
-    // Properties *property_list = property_read_properties(PROPERTIES_FILE_PATH);
-    // char *server_port = property_get_property(property_list, "SERVER_PORT");
+    node_self = create_node("",
+                            property_get_property(property_list, "SERVER_IP"),
+                            atoi(server_port));
 
     // ignore SIGPIE on client disconnect
     signal(SIGPIPE, SIG_IGN);
@@ -92,9 +102,16 @@ int main(int argc, char *argv[])
             continue; //  do not exit the loop here
         }
 
+        // check if last call set session to end
+        if (atomic_load(&session_end)) break;
+
         // create struct to hold the thread args so that it can be passed to pthread_create()
         ClientThreadArgs *thread_args = malloc(sizeof(ClientThreadArgs));
+
         thread_args->client_socket = client_socket;
+        thread_args->node_self = node_self;
+        thread_args->enter_shutdown = &enter_shutdown;
+        thread_args->session_end = &session_end;
         thread_args->client_list = chat_clients;
 
         pthread_t thread_id;
@@ -113,6 +130,10 @@ int main(int argc, char *argv[])
     }
 
     pthread_mutex_destroy(&chat_clients->mutex);
+
+    free(node_self);
+
+    printf("\nServer exit\n");
 
     return 0;
 }
