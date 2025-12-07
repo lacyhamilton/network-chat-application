@@ -50,8 +50,7 @@ void *sender_handler(void* args)
 	// loop while program is running
 	while (!atomic_load(&local_args->session_end))
 	{
-
-		// ###################### todo - client hangs on fgets ? freeing resources ? ################
+		// get a message struct from user input
 		get_message(&message);
 
 		// burrow self
