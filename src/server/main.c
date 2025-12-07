@@ -5,6 +5,9 @@
 #include "client_handler.h"
 #include "../chat_node.h"
 
+#define DBG
+#include "../dbg.h"
+
 // main program
 int main(int argc, char *argv[])
 {
@@ -71,6 +74,9 @@ int main(int argc, char *argv[])
     chat_clients->head = NULL;
     pthread_mutex_init(&chat_clients->mutex, NULL);
 
+    // debug info to server console
+    debug("Server listening on port: %s\n", server_port);
+
     // server loop
     while (true)
     {
@@ -101,6 +107,7 @@ int main(int argc, char *argv[])
             free(thread_args);
             continue;
         }
+        
         // THREAD DESTRUCTION
         pthread_detach(thread_id);
     }

@@ -17,6 +17,9 @@ int main(int argc, char *argv[])
     pthread_t listener;
     pthread_t sender;
 
+    // ready message to client console
+    printf("You are ready to go!\n");
+
     // read properties data
     ThreadArgs args =
     {

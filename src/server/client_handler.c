@@ -40,6 +40,13 @@ void *talk_to_client(void* arg)
 		broadcast_message(local_args->client_list, &msg);
 
 		handle_join(local_args->client_list, &msg);
+
+		// server console notification
+		printf("Client connected!");
+
+		// debug info to server console
+		//debug("[handle_request] thread ID %lu socket closed: %d",);
+
 		break;
 
 	case POST:
@@ -157,6 +164,7 @@ static void handle_join(NodeList *client_list, Message *message)
 	// open connection to send message to caller
 	int sender_socket = open_connection(&message->chat_node);
 
+	
 	// pass message through current connection
 	if (sender_socket >= 0)
 	{
