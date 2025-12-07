@@ -113,19 +113,16 @@ static MessageType get_message_type(char *command)
 
     // check for no differences
     else if (!strcmp(command, "join")) return JOIN;
-    
-    else if (!strcmp(command, "post")) return POST;
+
 
     else if (!strcmp(command, "leave")) return LEAVE;
 
-    // ######################### TODO - LOGIC WITH SHUTDOWN VS SHUT DOWN ????? ##########################
-        // command recognition
     else if (!strcmp(command, "shutdown")) return SHUTDOWN;
 
     else if (!strcmp(command, "shutdown_all")) return SHUTDOWN_ALL;
 
-    // fail command
-    return -1;
+    // default to a post on an unrecognized command
+    return POST;
 }
 
 // utility function to check if a character is a whitespace character
